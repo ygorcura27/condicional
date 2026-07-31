@@ -710,6 +710,7 @@ function renderModeSelect(){
     <button class="choice-btn" onclick="openDaily()"><strong>Perícia Diária</strong><br><span class="choice-tag">Uma peça por dia, grátis, sem precisar da campanha. A mesma pra todo mundo.</span></button>
     <button class="choice-btn" onclick="openWeekly()"><strong>Desafio Semanal</strong><br><span class="choice-tag">Uma peça mais dura, a semana inteira. Testa perícia de verdade.</span></button>
     <button class="choice-btn" onclick="openTutorial('pericia')">Aprender a jogar primeiro (3 tutoriais rápidos)</button>
+    <button class="choice-btn" onclick="openManual()"><strong>Manual do Perito</strong><br><span class="choice-tag">Como se identifica uma fraude: o que cada exame prova, cronologia dos materiais, técnica e mão.</span></button>
    </div>`);
 }
 window.chooseMode = function(m){
@@ -986,6 +987,9 @@ function meetsReq(req){
   if(req.flags) for(const k in req.flags) if(S.flags[k]!==req.flags[k]) return false;
   if(req.flagsFalse) for(const k of req.flagsFalse) if(S.flags[k]) return false;
   if(req.skillMin) for(const k in req.skillMin) if(S.skills[k] < req.skillMin[k]) return false;
+  /* skillMax existe para as saídas de emergência: a escolha que só faz sentido
+     para quem ainda não tem perícia suficiente, e some sozinha quando tem. */
+  if(req.skillMax) for(const k in req.skillMax) if(S.skills[k] > req.skillMax[k]) return false;
   if(req.meterMin) for(const k in req.meterMin) if(S.meters[k] < req.meterMin[k]) return false;
   if(req.meterMax) for(const k in req.meterMax) if(S.meters[k] > req.meterMax[k]) return false;
   if(req.evidenceAll) for(const e of req.evidenceAll) if(!S.evidence.includes(e)) return false;
@@ -1015,6 +1019,8 @@ function motivoRequisito(req){
   const faltas = [];
   for(const k in (req.skillMin||{})) if(S.skills[k] < req.skillMin[k])
     faltas.push(`${NOME_PERICIA[k]||k} ${S.skills[k]}/${req.skillMin[k]}`);
+  for(const k in (req.skillMax||{})) if(S.skills[k] > req.skillMax[k])
+    faltas.push(`${NOME_PERICIA[k]||k} já passou de ${req.skillMax[k]}`);
   for(const k in (req.meterMin||{})) if(S.meters[k] < req.meterMin[k])
     faltas.push(`${NOME_MEDIDOR[k]||k} ${S.meters[k]}/${req.meterMin[k]}`);
   for(const k in (req.meterMax||{})) if(S.meters[k] > req.meterMax[k])
@@ -2356,6 +2362,7 @@ function renderFooter(){
    <button class="sidebtn" onclick="openEvidenceJournal()">diário de evidências</button>
    <button class="sidebtn" onclick="openDaily()">perícia diária</button>
    <button class="sidebtn" onclick="openWeekly()">desafio semanal</button>
+   <button class="sidebtn" onclick="openManual()">manual do perito</button>
    <button class="sidebtn" onclick="openTutorial('pericia')">como jogar: perícia</button>
    <button class="sidebtn" onclick="openTutorial('forja')">como jogar: bancada</button>
    <button class="sidebtn" onclick="openTutorial('operacoes')">como jogar: operações</button>
@@ -4455,6 +4462,13 @@ function startLaudoStandalone(caso, callback){
   });
 }
 
+/* Só o que a tela de resultado precisa. `explica` não entra: é texto longo
+   e sai do próprio caso na hora de renderizar, via a chave já guardada. */
+function infoEnxuto(info){
+  return {veredito:info.veredito, correto:info.correto, decisivas:info.decisivas,
+    exames:info.exames, extras:info.extras, faltaram:info.faltaram, deixadas:info.deixadas,
+    nomeVeredito:info.nomeVeredito};
+}
 window.playDaily = function(){
   const dl = dailyLoad();
   const hoje = diaChaveHoje();
@@ -4464,7 +4478,7 @@ window.playDaily = function(){
     const dl2 = dailyLoad();
     dl2.streakDiaria = dl2.history[diaChaveOntem()] ? dl2.streakDiaria+1 : 1;
     dl2.melhorStreakDiaria = Math.max(dl2.melhorStreakDiaria||0, dl2.streakDiaria);
-    dl2.history[hoje] = {chave:casoDoDia().chave, grau:grau, quando:new Date().toISOString()};
+    dl2.history[hoje] = {chave:casoDoDia().chave, grau:grau, quando:new Date().toISOString(), info:infoEnxuto(info)};
     dailySave(dl2);
     mode = "daily-result";
     render();
@@ -4480,7 +4494,7 @@ window.playWeekly = function(){
     const semanaAnteriorKey = "sem"+(semanaChaveHoje()-1);
     dl2.streakSemanal = dl2.history[semanaAnteriorKey] ? dl2.streakSemanal+1 : 1;
     dl2.melhorStreakSemanal = Math.max(dl2.melhorStreakSemanal||0, dl2.streakSemanal);
-    dl2.history[semanaKey] = {chave:casoDaSemana().chave, grau:grau, quando:new Date().toISOString()};
+    dl2.history[semanaKey] = {chave:casoDaSemana().chave, grau:grau, quando:new Date().toISOString(), info:infoEnxuto(info)};
     dailySave(dl2);
     mode = "weekly-result";
     render();
@@ -4505,6 +4519,7 @@ function renderDailyIntro(){
    </div>
    <div class="choices">
     <button class="choice-btn" onclick="playDaily()">${jaJogou ? 'Ver resultado de hoje' : 'Jogar a peça de hoje →'}</button>
+    <button class="choice-btn" onclick="openManual()">Manual do Perito</button>
     <button class="choice-btn" onclick="closeDaily()">← Voltar</button>
    </div>`;
 }
@@ -4520,8 +4535,21 @@ function renderWeeklyIntro(){
    </div>
    <div class="choices">
     <button class="choice-btn" onclick="playWeekly()">${jaJogou ? 'Ver resultado desta semana' : 'Jogar o desafio da semana →'}</button>
+    <button class="choice-btn" onclick="openManual()">Manual do Perito</button>
     <button class="choice-btn" onclick="closeDaily()">← Voltar</button>
    </div>`;
+}
+/* Remonta o laudo comentado a partir do que ficou guardado. Registros
+   antigos (gravados antes de `info` ser salvo) caem no cabeçalho simples
+   em vez de quebrar a tela. */
+function laudoDetalhe(r){
+  if(!r.info) return `<p style="color:${grauCor(r.grau)};font-weight:700">${grauLabel(r.grau)}</p>`;
+  let caso = null;
+  try{ caso = CASO(r.chave); }catch(e){ caso = null; }
+  if(!caso) return `<p style="color:${grauCor(r.grau)};font-weight:700">${grauLabel(r.grau)}</p>`;
+  const fb = laudoFeedback(caso, r.grau, r.info);
+  return `<p style="font-size:.8rem;color:#8A7A5A;margin-bottom:4px">${caso.titulo} — ${caso.autor}</p>
+   <div class="tell" style="color:${fb.cor}">${fb.html}</div>`;
 }
 function renderDailyResult(){
   const dl = dailyLoad();
@@ -4531,14 +4559,15 @@ function renderDailyResult(){
   const share = "Condicional · Perícia Diária "+hoje+"\n"+grauLabel(r.grau)+" · sequência: "+dl.streakDiaria;
   return `<p style="font-variant:small-caps;letter-spacing:.1em;color:var(--faded)">Perícia Diária — ${hoje}</p>
    <div class="orn">◆ ◆ ◆</div>
-   <p style="color:${grauCor(r.grau)};font-weight:700">${grauLabel(r.grau)}</p>
+   ${laudoDetalhe(r)}
    <div style="margin:14px 0">
     <div style="font-size:.72rem;color:#9a8f78;text-transform:uppercase;letter-spacing:.09em">Sequência</div>
     <div style="margin-top:3px">${dl.streakDiaria} dia${dl.streakDiaria===1?'':'s'} seguido${dl.streakDiaria===1?'':'s'} · melhor: ${dl.melhorStreakDiaria}</div>
    </div>
    <p style="font-size:.78rem;color:#8A7A5A;white-space:pre-line;border:1px solid var(--brass);padding:8px 10px">${share}</p>
    <p style="font-size:.78rem;color:#8A7A5A;font-style:italic">Volte amanhã pra próxima peça.</p>
-   <div class="choices"><button class="choice-btn" onclick="closeDaily()">← Voltar</button></div>`;
+   <div class="choices"><button class="choice-btn" onclick="openManual()">Manual do Perito</button>
+    <button class="choice-btn" onclick="closeDaily()">← Voltar</button></div>`;
 }
 function renderWeeklyResult(){
   const dl = dailyLoad();
@@ -4548,18 +4577,213 @@ function renderWeeklyResult(){
   const share = "Condicional · Desafio Semanal\n"+grauLabel(r.grau)+" · sequência: "+dl.streakSemanal;
   return `<p style="font-variant:small-caps;letter-spacing:.1em;color:var(--faded)">Desafio Semanal</p>
    <div class="orn">◆ ◆ ◆</div>
-   <p style="color:${grauCor(r.grau)};font-weight:700">${grauLabel(r.grau)}</p>
+   ${laudoDetalhe(r)}
    <div style="margin:14px 0">
     <div style="font-size:.72rem;color:#9a8f78;text-transform:uppercase;letter-spacing:.09em">Sequência</div>
     <div style="margin-top:3px">${dl.streakSemanal} semana${dl.streakSemanal===1?'':'s'} · melhor: ${dl.melhorStreakSemanal}</div>
    </div>
    <p style="font-size:.78rem;color:#8A7A5A;white-space:pre-line;border:1px solid var(--brass);padding:8px 10px">${share}</p>
    <p style="font-size:.78rem;color:#8A7A5A;font-style:italic">Nova peça na próxima semana.</p>
-   <div class="choices"><button class="choice-btn" onclick="closeDaily()">← Voltar</button></div>`;
+   <div class="choices"><button class="choice-btn" onclick="openManual()">Manual do Perito</button>
+    <button class="choice-btn" onclick="closeDaily()">← Voltar</button></div>`;
 }
 window.closeDaily = function(){ mode = dailyReturnMode || (S.modo ? "map" : "modeselect"); render(); };
 window.openDaily = function(){ dailyReturnMode = mode; mode = "daily-intro"; render(); };
 window.openWeekly = function(){ dailyReturnMode = mode; mode = "weekly-intro"; render(); };
+
+/* =========================================================================
+   MANUAL DO PERITO — o mini-curso.
+   Ensina a ler uma peça: o que cada exame prova, o que ele NÃO prova, e a
+   cronologia dos materiais. É deliberadamente genérico — nada aqui aponta
+   a resposta de nenhum caso, porque a graça é o jogador chegar sozinho.
+   ========================================================================= */
+
+/* Para cada exame: o que ele entrega e onde ele engana. A segunda metade é
+   a que importa — quase todo erro de laudo vem de tratar um exame como
+   prova de algo que ele não alcança. */
+const EXAME_AULA = {
+  raking:{r:'Ilumina a peça quase de lado, revelando relevo: empaste, marca de pincel, deformação da tela, sulco de escrita.',n:'Não diz idade. Empaste vigoroso é assinatura de mão, não de época.'},
+  uv:{r:'Verniz antigo fluoresce num verde-amarelado uniforme. Retoque e repintura aparecem como manchas escuras por cima.',n:'Verniz novo aplicado sobre tudo apaga a leitura. Ausência de retoque não prova autenticidade — prova que ninguém restaurou.'},
+  ir:{r:'Atravessa a tinta e mostra o desenho subjacente: o traço de construção, os arrependimentos do autor.',n:'Não data. Mas um desenho subjacente que bate milimetricamente com o resultado final é suspeito: quem cria hesita, quem copia não.'},
+  xray:{r:'Mostra o que está por baixo — composição anterior, remendo, chassi, densidade do branco de chumbo.',n:'Uma tela reaproveitada de época não prova fraude: reaproveitar suporte era prática comum e honesta.'},
+  xrf:{r:'Lê os elementos químicos dos pigmentos sem raspar nada. É o exame que pega anacronismo de pigmento.',n:'Dá elemento, não composto — e lê sobretudo a superfície. Titânio pode vir de um retoque recente, não do quadro inteiro.'},
+  binder:{r:'Separa o aglutinante: têmpera de ovo, óleo, resina, acrílico. Cada um tem sua janela histórica.',n:'Exige microamostra. E verniz moderno sobre pintura antiga é restauro, não falsificação.'},
+  suporte:{r:'Data a madeira pelos anéis (dendrocronologia) ou identifica a fibra da tela — linho, cânhamo, algodão.',n:'Dendrocronologia dá quando a árvore caiu, nunca quando alguém pintou. É limite mínimo de idade, não data da obra.'},
+  proven:{r:'Reconstrói a cadeia de posse: catálogos de leilão, inventários, fotos de exposição.',n:'É papel — e papel se forja. Procedência impecável demais, sem lacuna nenhuma, é motivo de desconfiar mais, não menos.'},
+  assin:{r:'Compara grafia, pressão e, sobretudo, em que camada a assinatura está: sob o verniz ou por cima.',n:'A prova mais fraca que existe. É o mais fácil de imitar, e obra autêntica recebe assinatura falsa o tempo todo para subir de preço.'},
+
+  puncao:{r:'As marcas de ensaio e contraste dizem casa, teor e época em que a peça foi legalmente marcada.',n:'Punção autêntica pode ser recortada de peça velha e soldada numa nova. Sempre olhe a solda em volta da marca.'},
+  solda:{r:'A liga e a temperatura da junção denunciam a bancada: solda de época tem composição e aspecto próprios.',n:'Peça legítima que passou por conserto também tem solda nova. O que acusa é solda moderna em junção estrutural, não em reparo.'},
+  guilhoche:{r:'O passo do sulco sob microscópio separa torno de roseta manual de fresa de comando numérico.',n:'Sulco irregular não prova antiguidade — prova mão trêmula, que tanto o mestre cansado quanto o falsário afobado têm.'},
+  gemologia:{r:'Índice de refração, inclusões e estilo de lapidação situam a pedra no tempo e na origem.',n:'Pedra genuína e antiga pode estar cravada em peça feita ontem. A pedra data a pedra, não o objeto.'},
+  densidade:{r:'Peso contra volume revela o que está por dentro: ouro maciço, oco ou com miolo de outro metal.',n:'Não diz época. Uma peça de teor correto ainda pode ser réplica moderna feita com metal certo.'},
+  esmalte:{r:'A estratigrafia mostra a sequência das camadas e se há banho eletrolítico sob o esmalte.',n:'Galvanoplastia existe desde 1840 — a presença dela só descarta peça anterior a essa data.'},
+  inventario:{r:'Confronta medidas, peso e contagem de pedras com o registro da Casa Imperial.',n:'Divergência pode ser erro do escrivão do século XIX. Coincidência exata demais, por outro lado, sugere peça feita a partir do inventário.'},
+
+  nucleo:{r:'O ultrassom lê o eco interno: descontinuidade indica interface entre dois metais.',n:'Não identifica qual é o metal de dentro — só que existe uma fronteira onde não deveria haver.'},
+  liga:{r:'Amostragem destrutiva dá a composição exata, inclusive elementos-traço que apontam a fonte.',n:'Destrói um pedaço da peça. E liga correta não garante manufatura de época.'},
+  raios:{r:'Radiografia industrial penetra metal denso e mostra vazios, emendas e miolos.',n:'Lê estrutura, não idade.'},
+
+  ferramenta:{r:'O ângulo da goiva e o passo do escopro identificam ferramenta manual contra fresa mecânica.',n:'Um restaurador moderno pode ter refeito uma área com ferramenta elétrica sem que a peça seja falsa.'},
+  patinaPedra:{r:'A crosta de intemperismo e a sulfatação levam séculos para se formar em profundidade.',n:'Pátina se induz quimicamente. O que não se induz bem é pátina coerente dentro de fissuras e reentrâncias.'},
+  isotopos:{r:'A assinatura isotópica aponta a pedreira de origem — mármore de Carrara não se confunde com o de outra jazida.',n:'Diz de onde veio a pedra, nunca quando alguém a esculpiu.'},
+  uvPedra:{r:'Cola, emenda e reintegração fluorescem diferente da pedra original.',n:'Escultura antiga restaurada tem emenda legítima. O problema é emenda que monta uma peça a partir de fragmentos de origens diferentes.'},
+  sal:{r:'Sais e microflora contam onde a peça passou os últimos séculos — enterrada, submersa ou em sala seca.',n:'Contradição com a procedência declarada é indício forte, mas peça pode ter mudado de mãos e de ambiente.'},
+
+  tl:{r:'A termoluminescência data a última queima da cerâmica. É dos poucos exames que dá idade direta.',n:'Só a última queima: requeimar zera o relógio. E amostra tirada de restauro moderno contamina a leitura.'},
+  vidrado:{r:'A sequência engobo/vidrado e a aderência entre camadas revelam a tecnologia de forno.',n:'Não data sozinho — situa numa tradição técnica, que pode ser imitada.'},
+  raiosCer:{r:'Mostra emendas, restauros e se a peça foi montada a partir de cacos de origens diferentes.',n:'Restauro é normal em cerâmica arqueológica. O que acusa é montagem de peças que nunca foram o mesmo objeto.'},
+  torno:{r:'Rolete, torneta e molde deixam marcas internas distintas — dizem como a peça foi feita.',n:'Técnica correta é reproduzível por qualquer ceramista que estude o método.'},
+  contexto:{r:'Cruza estilo e iconografia com a cronologia declarada para o sítio.',n:'É argumento, não medida. Estilo se aprende e se copia.'},
+  residuo:{r:'O sedimento aderente deve bater com o solo do sítio declarado.',n:'Solo autêntico pode ser aplicado depois numa peça nova. Olhe se ele entrou onde só o tempo o colocaria.'},
+  microFratura:{r:'Bordas de fratura envelhecem: caco antigo tem aresta desgastada, quebra recente tem aresta viva.',n:'Desgaste diferencial entre cacos da mesma peça é o achado — não o desgaste em si.'},
+
+  madeira:{r:'Espécie, anéis e marca de serra situam a peça: serra manual, serra d\'água ou serra circular (século XIX em diante).',n:'Madeira antiga é reaproveitável. Móvel novo feito com tábua de demolição passa nesse exame.'},
+  ferragem:{r:'Prego forjado, prego cortado a máquina (c. 1790-1890) e prego de arame (fim do XIX) marcam épocas distintas.',n:'Ferragem se troca. Prego moderno pode ser conserto; prego antigo pode ter sido plantado.'},
+  entalhe:{r:'A passada de goiva e a repetição do gesto distinguem entalhe à mão de cópia por pantógrafo ou fresa.',n:'Regularidade excessiva acusa máquina, mas oficinas de época também produziam em série com molde.'},
+  verniz:{r:'A estratigrafia separa goma-laca, cera e reposições modernas por cima.',n:'Acabamento é a camada mais trocada de um móvel. Verniz moderno diz pouco sobre o corpo da peça.'},
+  desgaste:{r:'O desgaste tem que estar onde a mão, o cotovelo e o pé realmente tocam ao longo de gerações.',n:'É dos indícios mais difíceis de forjar bem — desgaste uniforme, ou em lugar que ninguém toca, é sinal de envelhecimento artificial.'},
+
+  marcadagua:{r:'A filigrana e as linhas de forma identificam fábrica e período do papel com boa precisão.',n:'Folha em branco de época existe e é o insumo preferido do falsário de documentos.'},
+  fibra:{r:'Papel de trapo (até meados do XIX), polpa de madeira (depois) e branqueadores ópticos (a partir dos anos 1950) têm janelas claras.',n:'Branqueador óptico brilha sob UV — mas confirma só que o papel é moderno, não que o texto é falso.'},
+  tinta:{r:'Ferrogálica, nanquim e tinta moderna se separam por carga e solvente; a sequência de traços mostra o que foi escrito antes.',n:'Tinta de receita antiga é preparável hoje. O que acusa é tinta que atravessa por cima de um vinco que deveria ser posterior.'},
+  vinco:{r:'A luz rasante lê o sulco da pena e a marca da prensa — inclusive escrita apagada.',n:'Mostra ordem de eventos, não datas.'},
+  selo:{r:'Lote, numeração e sequência do livro precisam ser internamente coerentes.',n:'Numeração fora de sequência pode ser erro de cartório. Coerência perfeita pode ser folha inserida com cuidado.'},
+  datacao:{r:'C-14 dá a idade da fibra do suporte.',n:'Data a morte da planta, não a escrita. Papel de época em branco derrota esse exame por completo.'},
+
+  fibraTex:{r:'Espécie, torção e fiação apontam tecnologia: fio de fuso manual difere de fio industrial.',n:'Tecido antigo é reaproveitável como suporte.'},
+  corante:{r:'Corantes naturais dominam até meados do XIX; anilinas sintéticas surgem a partir de 1856.',n:'Anilina numa peça declarada como colonial é anacronismo — mas pode estar só num remendo posterior.'},
+  fioMetal:{r:'Lâmina, alma e composição do fio metálico mudam bastante entre séculos.',n:'Fio antigo se recupera de peça arruinada e se reaplica.'},
+  ponto:{r:'Passo, densidade e marca de bastidor revelam a mão e a oficina.',n:'Técnica histórica é ensinável e reproduzível.'},
+  datacaoTex:{r:'C-14 na fibra do suporte dá a idade do material.',n:'Mesmo limite do papel: data a fibra, não o bordado feito sobre ela.'},
+  desbote:{r:'A exposição à luz é desigual: dobras e áreas cobertas desbotam menos. O padrão precisa fazer sentido.',n:'Desbote uniforme demais indica envelhecimento acelerado em câmara.'},
+
+  processo:{r:'Daguerreótipo (1839-60), albumina (1850-1900), colódio úmido (1851-80) e gelatina/prata (1880 em diante) têm janelas nítidas.',n:'Processo histórico é praticável hoje por fotógrafos alternativos — a janela descarta, mas não confirma.'},
+  papelFoto:{r:'Fabricante, tipo de cartão-suporte e anotações no verso datam a cópia.',n:'Data a cópia, não o negativo. Cópia moderna de negativo antigo é legítima, mas não é vintage.'},
+  grao:{r:'A estrutura da imagem sob microscópio separa fotografia contínua de reprodução impressa em retícula.',n:'Retícula prova reprodução gráfica. Grão contínuo só prova que é fotografia, de qualquer data.'},
+  prata:{r:'Densitometria e viragem (ouro, selênio, platina) mostram tratamento e envelhecimento da prata.',n:'Viragem é aplicável a qualquer tempo.'},
+  datacaoFoto:{r:'Corte, espessura e formato do cartão seguem modas datáveis com boa precisão.',n:'Cartão de época pode receber colagem posterior.'}
+};
+
+const MANUAL = [
+ {id:'metodo', titulo:'O método', html:`
+  <p>Um laudo tem duas partes, e as duas contam: <b>a conclusão</b> e <b>a fundamentação</b>. Acertar a conclusão por palpite não é perícia — é sorte. Por isso a mesa exige que você marque <b>duas provas</b> que sustentem o que assinou.</p>
+  <p><b>Homologado</b> é conclusão certa com as duas provas decisivas. <b>Contestado</b> é conclusão certa apoiada em achado que não sustenta — você chegou lá, mas não conseguiria defender numa audiência. <b>Rejeitado</b> é conclusão errada.</p>
+  <div class="orn">◆ ◆ ◆</div>
+  <p><b>A ordem que funciona:</b></p>
+  <p>1. Leia a alegação antes de tudo. O que exatamente está sendo afirmado — autoria, data, procedência? É essa afirmação que você vai testar, não a peça em abstrato.</p>
+  <p>2. Procure o exame que pode <i>derrubar</i> a alegação, não o que a confirma. Perícia é tentativa de refutação; quem sai procurando confirmação acha.</p>
+  <p>3. Orçamento é curto de propósito. Exame que só repete o que você já sabe é exame perdido.</p>
+  <p>4. Um achado sozinho quase nunca fecha um caso. Dois achados independentes que apontam para a mesma conclusão, sim — é por isso que a mesa pede dois.</p>`},
+
+ {id:'veredictos', titulo:'Os quatro veredictos', html:`
+  <p>Errar de veredicto quase sempre é errar <i>de categoria</i>, não de observação. Os quatro se separam por duas perguntas: <b>o material é da época?</b> e <b>houve intenção de enganar?</b></p>
+  <div class="orn">◆ ◆ ◆</div>
+  <p><b>Autêntica.</b> Autoria e datação conferem, e não há intervenção relevante escondida. É o veredicto que exige mais para ser dado, não menos.</p>
+  <p><b>Autêntica com intervenção não declarada.</b> A peça é de época e do autor, mas alguém repintou, completou ou "melhorou" em silêncio. <span class="tell">O sinal típico: material anacrônico <b>localizado</b> — moderno numa área, de época no resto.</span> Uma peça inteira em material moderno não é isso.</p>
+  <p><b>Falsificação.</b> Feita ou montada para enganar quanto a autoria ou época. <span class="tell">O sinal típico: anacronismo <b>estrutural</b> — no suporte, na base, na camada de fundo. O que está por baixo é mais difícil de forjar que o que está por cima.</span></p>
+  <p><b>Atribuição incorreta.</b> Peça genuinamente antiga, autor errado. <span class="tell">Aqui não há nada anacrônico: material, técnica e desgaste batem com a época. O que não bate é a mão — e a papelada.</span> Não é crime material; é erro de catálogo, às vezes conveniente.</p>
+  <div class="orn">◆ ◆ ◆</div>
+  <p style="font-style:italic;color:#6B5B45">Regra prática: se tudo é de época e mesmo assim algo não fecha, você provavelmente está diante de atribuição incorreta — não force uma falsificação que os materiais não sustentam.</p>`},
+
+ {id:'exames', titulo:'Os exames', html:''},
+
+ {id:'materiais', titulo:'Cronologia dos materiais', html:`
+  <p>Esta é a espinha da perícia técnica: <b>um material que não existia não pode estar ali</b>. Anacronismo é a única prova que não depende de opinião.</p>
+  <div class="orn">◆ Pigmentos ◆</div>
+  <p><b>Branco de chumbo</b> — da Antiguidade ao século XX. Aparece na radiografia por ser muito denso.<br>
+  <b>Azul da Prússia</b> — 1706, em uso a partir dos anos 1710.<br>
+  <b>Azul cobalto</b> — 1802. <b>Amarelo de cromo</b> — c. 1809.<br>
+  <b>Ultramarino sintético</b> — 1826 (o natural, de lápis-lazúli, é antiquíssimo e caríssimo).<br>
+  <b>Branco de zinco</b> — comercial a partir de 1834.<br>
+  <b>Amarelo de cádmio</b> — anos 1840. <b>Viridian</b> — c. 1838-59.<br>
+  <b>Anilinas sintéticas</b> — a partir de 1856.<br>
+  <span class="tell"><b>Branco de titânio</b> — só a partir de 1921. É o anacronismo clássico: titânio numa tela declarada do século XIX é conversa encerrada.</span><br>
+  <b>Ftalocianina</b> (azul/verde) — 1935-38. <b>Quinacridona</b> — 1958.</p>
+  <div class="orn">◆ Aglutinantes ◆</div>
+  <p><b>Têmpera de ovo</b> domina até o século XV. <b>Óleo</b> se espalha do século XV em diante. <b>Alquídica</b> é do século XX. <span class="tell"><b>Acrílico</b> só existe a partir dos anos 1950</span> — e resina acrílica sob a camada pictórica, não sobre ela, é estrutural.</p>
+  <div class="orn">◆ Suportes ◆</div>
+  <p><b>Painel de madeira</b> domina até o século XVI; <b>tela</b> se generaliza depois. <b>Tela pré-preparada comercial</b> é do século XIX. <b>Algodão</b> como suporte comum é do século XX — antes, linho.<br>
+  <b>Tachinha</b> até o século XX; <span class="tell"><b>grampo de grampeador</b> só a partir dos anos 1940</span>.<br>
+  <b>Prego forjado</b> à mão até c. 1790; <b>cortado a máquina</b> c. 1790-1890; <b>de arame</b> do fim do XIX em diante.</p>
+  <div class="orn">◆ Papel ◆</div>
+  <p><b>Papel verjurado</b> (com linhas de forma visíveis contra a luz) até c. 1750. <b>Velino</b> a partir de 1757. <b>Polpa de madeira</b> a partir de c. 1850 — amarela e fica quebradiço. <span class="tell"><b>Branqueador óptico</b> a partir dos anos 1950: brilha em azul sob UV e entrega o papel na hora.</span></p>
+  <div class="orn">◆ Metal ◆</div>
+  <p><b>Galvanoplastia</b> a partir de 1840. <b>Solda com cádmio</b> é do século XX. <b>Usinagem CNC e corte a laser</b> deixam marca regular demais para qualquer bancada anterior aos anos 1970.</p>`},
+
+ {id:'mao', titulo:'Técnica e mão', html:`
+  <p>Material anacrônico pega o falsário apressado. O bom falsário usa material de época — e aí o que resta é a mão.</p>
+  <div class="orn">◆ Craquelê ◆</div>
+  <p>Rachadura de idade nasce da tensão entre camadas e atravessa <b>todas</b> elas, inclusive a base. <span class="tell">Craquelê induzido (estufa, secante, verniz que repuxa) tende a parar na superfície, a ter passo regular demais e a ignorar a geometria do chassi.</span> Craquelê autêntico se organiza em torno dos pontos de tensão: cantos, travessas, nós da madeira.</p>
+  <div class="orn">◆ Arrependimento (pentimento) ◆</div>
+  <p>Quem cria muda de ideia. O infravermelho e a radiografia mostram braços reposicionados, contornos abandonados, composições recomeçadas. <span class="tell">Uma obra sem nenhum arrependimento, com desenho subjacente que bate exatamente com a pintura final, é o retrato de alguém copiando uma imagem já pronta.</span></p>
+  <div class="orn">◆ Camada e sequência ◆</div>
+  <p>A ordem importa mais que o conteúdo. Assinatura <b>sob</b> o verniz original é contemporânea da obra; <b>sobre</b> o verniz foi acrescentada depois. Tinta que atravessa um vinco que deveria ser posterior inverte a cronologia declarada — e cronologia invertida é prova dura.</p>
+  <div class="orn">◆ Desgaste ◆</div>
+  <p>Objeto usado desgasta onde a mão, o corpo e o pé tocam: quinas de gaveta, braço de cadeira, alça de jarro. <span class="tell">Desgaste uniforme por toda a peça, ou em lugar que ninguém alcança, é envelhecimento artificial.</span></p>
+  <div class="orn">◆ A mão do autor ◆</div>
+  <p>Cada pintor tem hábitos que não pensa em disfarçar porque não sabe que os tem: como fecha uma sombra, quanta tinta carrega no pincel, se termina a orelha antes ou depois do cabelo. O falsário copia o resultado; raramente copia o processo.</p>`},
+
+ {id:'sinais', titulo:'Sinais que denunciam', html:`
+  <p>Os erros que mais aparecem numa mesa de perícia, em ordem de frequência:</p>
+  <p><b>1. Anacronismo estrutural.</b> Material moderno na base, no suporte ou na primeira camada. É o mais difícil de explicar como restauro, porque restauro trabalha por cima.</p>
+  <p><b>2. Procedência boa demais.</b> Cadeia de posse completa, sem lacuna, com documento para cada década. Coleção real tem buraco, herança confusa, década perdida. <span class="tell">Papel é o material mais fácil de falsificar — e o falsário sabe disso melhor que o perito.</span></p>
+  <p><b>3. Coerência quebrada entre camadas.</b> Verniz do século XIX sobre pigmento do século XX. Solda moderna prendendo punção antiga. O conjunto conta uma história impossível.</p>
+  <p><b>4. Perfeição.</b> Simetria exata, sulco de passo constante, desgaste homogêneo, craquelê regular. Trabalho humano de época tem tolerância; máquina não tem.</p>
+  <p><b>5. Coincidência com a fonte.</b> A peça bate demais com uma reprodução conhecida — inclusive nos erros dessa reprodução. Copiou-se a foto, não o objeto.</p>
+  <div class="orn">◆ ◆ ◆</div>
+  <p><b>E os que NÃO denunciam nada:</b></p>
+  <p>Suporte reaproveitado (era prática comum). Restauro visível (a maioria das peças antigas passou por restauro). Assinatura estranha (obra autêntica recebe assinatura falsa o tempo todo, para valorizar). Divergência pequena com inventário antigo (o escrivão também errava).</p>
+  <p style="font-style:italic;color:#6B5B45">Perícia honesta é saber dizer "isto não prova nada" com a mesma firmeza com que se diz "isto é falso".</p>`}
+];
+
+/* A aula dos exames é montada dos dados, e não escrita à mão, para nunca
+   ficar dessincronizada de EXAMES/POOLS quando um caso novo entrar. */
+const MANUAL_CLASSES = [
+  ['pintura','Pintura'],['papel','Papel e documento'],['ourivesaria','Ourivesaria'],
+  ['metal','Metal maciço'],['pedra','Escultura em pedra'],['ceramica','Cerâmica'],
+  ['mobiliario','Mobiliário'],['textil','Têxtil'],['fotografia','Fotografia']
+];
+function manualExames(){
+  const vistos = {};
+  return MANUAL_CLASSES.map(function(c){
+    const pool = POOLS[c[0]] || [];
+    const itens = pool.map(function(id){
+      const e = EXAMES[id]; if(!e) return '';
+      const a = EXAME_AULA[id];
+      const repetido = vistos[id]; vistos[id] = true;
+      if(!a) return '<p><b>'+e.nome+'</b> — '+e.desc+'</p>';
+      return '<div style="margin:0 0 13px">'
+        + '<div style="font-weight:700">'+e.nome+(repetido?' <span style="font-weight:400;font-size:.76rem;color:#8A7A5A">(também em outras classes)</span>':'')+'</div>'
+        + '<div style="font-size:.9rem">'+a.r+'</div>'
+        + '<div style="font-size:.86rem;color:#7A6A50;font-style:italic">Não prova: '+a.n+'</div></div>';
+    }).join('');
+    return '<div class="orn">◆ '+c[1]+' ◆</div>'+itens;
+  }).join('');
+}
+
+let manualSecao = 'metodo';
+let manualReturnMode = null;
+window.openManual = function(){ if(mode!=='manual') manualReturnMode = mode; mode = 'manual'; render(); };
+window.closeManual = function(){ mode = manualReturnMode || (S.modo ? 'map' : 'modeselect'); render(); };
+window.manualIr = function(id){ manualSecao = id; render(); };
+function renderManual(){
+  const sec = MANUAL.find(function(s){ return s.id===manualSecao; }) || MANUAL[0];
+  const abas = MANUAL.map(function(s){
+    const on = s.id===sec.id;
+    return '<button class="sidebtn" onclick="manualIr(\''+s.id+'\')" style="'
+      + (on?'border-color:var(--brass);color:var(--brassL)':'')+'">'+s.titulo+'</button>';
+  }).join(' ');
+  const corpo = sec.id==='exames'
+    ? '<p>Cada exame responde uma pergunta e só ela. A linha em itálico é a mais importante: é o limite do que aquele exame alcança.</p>'+manualExames()
+    : sec.html;
+  return `<p style="font-variant:small-caps;letter-spacing:.1em;color:var(--faded)">Manual do Perito</p>
+   <p style="font-size:.85rem;color:var(--faded)">Como se lê uma peça. Nada aqui aponta a resposta de nenhum caso — é o ofício, não o gabarito.</p>
+   <div style="margin:12px 0 4px">${abas}</div>
+   <div class="orn">◆ ${sec.titulo} ◆</div>
+   ${corpo}
+   <div class="choices"><button class="choice-btn" onclick="closeManual()">← Voltar</button></div>`;
+}
 
 /* =========================================================================
    TUTORIAL — um caso generoso de cada motor, fora da campanha, sem
@@ -4835,6 +5059,33 @@ function startLaudo(caso, callback){
   return {examinar:rodar, marcar:marcar, escolher:escolher, assinar:assinar, estado:st, caso:caso};
 }
 
+/* O porquê do resultado — a parte que ensina. Vive fora de `laudoAction`
+   porque a Perícia Diária precisa do mesmo texto e não tem cena onde
+   escrever: ali ele é remontado na tela de resultado. */
+const LAUDO_CAB = {
+  perfeito:{cab:'LAUDO HOMOLOGADO', cor:'#5FA08C', sub:'conclusão correta · fundamentação sustentada'},
+  parcial: {cab:'LAUDO CONTESTADO', cor:'#C98B3A', sub:'conclusão correta · fundamentação frágil'},
+  falha:   {cab:'LAUDO REJEITADO',  cor:'#A83220', sub:'conclusão incorreta'}
+};
+function laudoFeedback(caso, grau, info){
+  const h = LAUDO_CAB[grau] || LAUDO_CAB.falha;
+  const desfecho = grau==='perfeito' ? (caso.desfechoPerfeito||'')
+    : grau==='parcial' ? (caso.desfechoParcial||'') : (caso.desfechoFalha||'');
+  const nomeDe = function(id){ return (VEREDITOS.find(function(v){ return v.id===id; })||{nome:'—'}).nome; };
+  const linhas = [];
+  linhas.push('<b>'+h.cab+'</b> <span style="opacity:.7">— '+h.sub+'</span>');
+  linhas.push(desfecho);
+  linhas.push('A peça era: <b>'+(info.nomeVeredito||nomeDe(info.correto))+'</b>.'
+    + (grau==='falha' ? ' Você concluiu por «'+nomeDe(info.veredito)+'».' : ''));
+  linhas.push('<i>'+(info.explica||caso.explica||'')+'</i>');
+  if(info.faltaram && info.faltaram.length)
+    linhas.push('<b>Exames que mudariam o caso e você não fez:</b> '+info.faltaram.join('; ')+'.');
+  else if(info.deixadas && info.deixadas.length)
+    linhas.push('<b>Provas que estavam no caderno e ficaram de fora:</b> '+info.deixadas.join('; ')+'.');
+  linhas.push('<span style="opacity:.7">Exames gastos: '+info.exames+'.</span>');
+  return {cor:h.cor, html:linhas.filter(Boolean).join('<br><br>')};
+}
+
 function laudoAction(caso, opts){
   return function(){
     startLaudo(caso, function(sucesso, grau, info){
@@ -4849,43 +5100,27 @@ function laudoAction(caso, opts){
         if(opts[pref+'Relacoes']) for(const k in opts[pref+'Relacoes'])
           S.relacoes[k]=clampSigned((S.relacoes[k]||0)+opts[pref+'Relacoes'][k]);
       };
-      let cab, cor, sub, desfecho;
       if(grau==='perfeito'){
-        cab='LAUDO HOMOLOGADO'; cor='#5FA08C'; sub='conclusão correta · fundamentação sustentada';
-        desfecho=caso.desfechoPerfeito||'';
         if(opts.evidenceId && !S.evidence.includes(opts.evidenceId)) S.evidence.push(opts.evidenceId);
         aplica('success');
         S.streakPerfeito = (S.streakPerfeito||0)+1;
         if(S.streakPerfeito>=5) grantAchievement("periciaCincoSeguidas");
         if(info.extras===0) grantAchievement("primeiraTentativa");
       } else if(grau==='parcial'){
-        cab='LAUDO CONTESTADO'; cor='#C98B3A'; sub='conclusão correta · fundamentação frágil';
-        desfecho=caso.desfechoParcial||'';
         const ev = opts.partialEvidenceId!==undefined ? opts.partialEvidenceId : opts.evidenceId;
         if(ev && !S.evidence.includes(ev)) S.evidence.push(ev);
         aplica('partial');
         S.streakPerfeito = 0;
       } else {
-        cab='LAUDO REJEITADO'; cor='#A83220'; sub='conclusão incorreta';
-        desfecho=caso.desfechoFalha||'';
         aplica('fail');
         S.streakPerfeito = 0;
         S.falhasMinigame = (S.falhasMinigame||0)+1;
         if(S.falhasMinigame>=3) grantAchievement("aprendendoComOsErros");
       }
-      const linhas=[];
-      linhas.push('<b>'+cab+'</b> <span style="opacity:.7">— '+sub+'</span>');
-      linhas.push(desfecho);
-      linhas.push('A peça era: <b>'+info.nomeVeredito+'</b>.'
-        + (grau==='falha' ? ' Você concluiu por «'
-            +(VEREDITOS.find(function(v){ return v.id===info.veredito; })||{nome:'—'}).nome+'».' : ''));
-      linhas.push('<i>'+info.explica+'</i>');
-      if(info.faltaram.length) linhas.push('<b>Exames que mudariam o caso e você não fez:</b> '+info.faltaram.join('; ')+'.');
-      else if(info.deixadas.length) linhas.push('<b>Provas que estavam no caderno e ficaram de fora:</b> '+info.deixadas.join('; ')+'.');
-      linhas.push('<span style="opacity:.7">Exames gastos: '+info.exames+'.</span>');
+      const fb = laudoFeedback(caso, grau, info);
 
       document.getElementById('scene-text').innerHTML +=
-        '<div class="tell" style="margin-top:15px;color:'+cor+'">'+linhas.filter(Boolean).join('<br><br>')+'</div>';
+        '<div class="tell" style="margin-top:15px;color:'+fb.cor+'">'+fb.html+'</div>';
       document.getElementById('scene-choices').innerHTML =
         '<button class="choice-btn" type="button" onclick="advancePeriod()">Continuar →</button>';
       document.getElementById('scene-choices').style.display='block';
@@ -6856,8 +7091,16 @@ const SCENES2 = {
    choices:[{label:"Reler o contrato com olhos de hoje.", effects:{evidence:["ev10"], skills:{percepcao:1}},
      result:`Comissão de 15% — era o combinado. Mas a cláusula quarta, no juridiquês do Dourado ("no que tange à intermediação"), autorizava "retenções operacionais a critério do agente". <span class="tell">"No que tange." A mesma fórmula da carta de delação.</span> Você guarda o contrato com as mãos frias.`}]},
   {id:"apto2_quarta", once:false, char:"vice", text:`Madrugada. A quarta tela no cavalete — a primeira que você pinta <em>para ser encontrada</em>. Cada pincelada precisa ser sua o bastante para fisgar, e datável o bastante para condenar.`,
-   choices:[{label:"Trabalhar na quarta tela.", requires:{skillMin:{falsificacao:8}}, effects:{flagInc:{quartaTelaProgress:1}},
-     result:`A sombra vermelha vai nascendo sob o parapeito de uma janela nova. Isca com assinatura. Falta pouco.`}]},
+   choices:[
+    {label:"Trabalhar na quarta tela.", requires:{skillMin:{falsificacao:8}}, effects:{flagInc:{quartaTelaProgress:1}},
+     result:`A sombra vermelha vai nascendo sob o parapeito de uma janela nova. Isca com assinatura. Falta pouco.`},
+    /* Saída de emergência: quem chega aqui sem Falsificação 8 e sem a aliança da
+       Íris não tinha nenhuma outra fonte de perícia no Caso 2 — a cena virava
+       beco sem saída e fechava a abordagem "A Quarta Tela" no golpe final.
+       skillMax faz esta escolha sumir assim que ela cumpre o papel. */
+    {label:"Refazer a camada de base até a mão obedecer.", requires:{skillMax:{falsificacao:7}}, effects:{skills:{falsificacao:1}},
+     result:`Você raspa o que fez e recomeça. Três vezes. Na quarta, o pulso encontra o peso antigo — o mesmo de 2017, quando você ainda não sabia o que estava assinando. <span class="tell">A mão lembra antes de você.</span> Amanhã dá pra trabalhar de verdade.`}
+   ]},
   {id:"apto2_iris", once:true, char:"iris", requires:{flags:{irisAliada:true}}, text:`Íris aparece sem avisar, com café de verdade e o cenho de quem passou o dia pensando. "Eu fiquei remoendo o lote de pigmento," ela diz. "Quem comprou aquilo não pinta. Quem comprou aquilo <em>abastece</em>."`,
    choices:[{label:"Pensar junto com ela.", effects:{skills:{percepcao:1}, confianca:2},
      result:`Vocês montam a cadeia no verso de um envelope: o dinheiro (Niterói) → o abastecedor (o lote) → o pintor (você... e quem mais?). No topo do envelope, Íris escreve "W." e circula duas vezes. "Vai lá tirar isso a limpo. E volta inteiro, dessa vez."`}]}
@@ -12112,6 +12355,7 @@ function render(){
   else if(mode==="weekly-result"){ inner = renderWeeklyResult(); }
   else if(mode==="tutorial-intro"){ inner = renderTutorialIntro(); }
   else if(mode==="tutorial-fim"){ inner = renderTutorialFim(); }
+  else if(mode==="manual"){ inner = renderManual(); }
   app.innerHTML = shell(inner);
 }
 
