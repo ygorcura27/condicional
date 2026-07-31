@@ -564,6 +564,10 @@ function newState(){
     flags:{},
     visited:{},
     conquistas:[],
+    /* Quem Vincent já encontrou de fato. O dossiê só lista essa gente: listar
+       o elenco inteiro desde o começo entregaria personagem que só aparece
+       temporadas depois. Preenchido ao renderizar a cena, em conhecer(). */
+    conhecidos:{},
     periciaAlvos:{},
     pratica:{},
     streakPerfeito:0, streakForjaLimpo:0, streakOperacaoExecutada:0, falhasMinigame:0,
@@ -878,6 +882,31 @@ function hasNewSceneOnce(locId){
     return poolFor(locId).some(s => s.once && !s.isCheck && !S.visited[s.id] && !isStale(s)
       && (meetsReq(s.requires) || bloqueadaSoPeloTempo(s.requires)));
   }catch(e){ return false; }
+}
+/* "Diálogo novo, jogável agora" — mais estrito que hasLiveScene de propósito.
+   Ignora cena repetível (que nunca se esgota e acenderia o aviso para sempre)
+   e cena presa só no calendário (que ninguém consegue ler hoje — nesse caso
+   passar o tempo é exatamente a saída certa, não pode ser bloqueada). */
+function hasNewSceneNow(locId){
+  try{
+    return poolFor(locId).some(s => s.once && !s.isCheck && !S.visited[s.id]
+      && !isStale(s) && meetsReq(s.requires));
+  }catch(e){ return false; }
+}
+/* Nomes dos lugares que têm conversa inédita esperando, para dizer ao jogador
+   aonde ir em vez de deixá-lo queimar período no lugar errado. */
+function locaisComNovidade(exceto){
+  try{
+    const ACTIVE=getActiveLocs(); const out=[];
+    for(const id in ACTIVE){
+      const l=ACTIVE[id];
+      if(id===exceto) continue;
+      if(l.caso && l.caso!==S.caso) continue;
+      if(l.reqFlag && !S.flags[l.reqFlag]) continue;
+      if(hasNewSceneNow(id)) out.push(l.short||l.name);
+    }
+    return out;
+  }catch(e){ return []; }
 }
 function anyLiveSceneAnywhere(){
   try{
@@ -2513,14 +2542,38 @@ function barrasPericia(){
   }).join("");
 }
 
+/* Registra que Vincent encontrou alguém. Chamado quando a cena com aquele
+   rosto é desenhada, e não quando a escolha é feita: ver o personagem já é
+   conhecê-lo, mesmo que o jogador saia sem falar nada. */
+function conhecer(id){
+  if(!id) return;
+  if(!S.conhecidos) S.conhecidos = {};
+  S.conhecidos[id] = true;
+}
+/* Save antigo não tem `conhecidos`. Reconstrói pelo que dá para provar — as
+   cenas já visitadas dos locais ativos. Subestimar é seguro (a lista se
+   completa sozinha ao jogar); superestimar entregaria o que a tela existe
+   para esconder. */
+function conhecidosMigrar(){
+  if(S.conhecidos) return;
+  S.conhecidos = {};
+  try{
+    const ACTIVE = getActiveLocs();
+    for(const id in ACTIVE)
+      poolFor(id).forEach(s=>{ if(s.char && S.visited[s.id]) S.conhecidos[s.char] = true; });
+  }catch(e){}
+}
+
 function renderDossie(){
+  conhecidosMigrar();
   const npcs = ["helena","beatriz","anya","carol","nelson","iris"];
-  const rows = npcs.filter(id=>PORTRAITS[id]).map(id=>{
+  const conhecidos = npcs.filter(id=>PORTRAITS[id] && S.conhecidos[id]);
+  const rows = conhecidos.map(id=>{
     const v = S.relacoes[id]||0;
     return `<div style="margin:16px 0">${plate(id)}
      <div style="margin-top:6px">${relBar("Relação", v)}</div>
      <div style="font-size:.78rem;color:var(--faded);font-style:italic;margin-top:2px">${relLabel(v)}</div></div>`;
-  }).join("");
+  }).join("") || `<p style="color:var(--faded);font-style:italic">Você ainda não encontrou ninguém que valha uma ficha. O dossiê se escreve sozinho conforme as portas forem abrindo.</p>`;
   return `<p style="font-variant:small-caps;letter-spacing:.1em;color:var(--faded)">Dossiê Pessoal</p>
    <p style="font-size:.85rem;color:var(--faded)">Como Vincent Andrade é visto por quem ele conhece — e no que ele está se tornando, caso a caso.</p>
    <div class="orn">◆ ◆ ◆</div>
@@ -12335,7 +12388,7 @@ function render(){
   else if(mode==="prologue"){ inner = renderPrologue(); }
   else if(mode==="map"){
     const semNada = !anyLiveSceneAnywhere();
-    inner = mapSVG()+renderLegend()+`<p class="map-hint">Escolha um destino no mapa. Cada ação relevante consome um período do dia.<br><span style="color:var(--brassL)">◆ halo dourado</span> = há diálogo novo ali. Sem halo, só dá pra passar o tempo.${temTornozeleira()?'':'<br><span style="color:var(--brassL)">Sem tornozeleira:</span> o perímetro acabou — circule à vontade.'}</p>`
+    inner = mapSVG()+renderLegend()+`<p class="map-hint">Escolha um destino no mapa. Cada ação relevante consome um período do dia.<br><span style="color:var(--brassL)">◆ halo dourado</span> = há diálogo novo ali. Enquanto sobrar halo no mapa, o tempo não passa: ouça todo mundo antes que o dia vire.${temTornozeleira()?'':'<br><span style="color:var(--brassL)">Sem tornozeleira:</span> o perímetro acabou — circule à vontade.'}</p>`
      + (semNada ? `<div class="choices"><button class="choice-btn" onclick="skipToNextCaso()">Nada mais por aqui — avançar para o próximo caso</button></div>` : "");
   }
   else if(mode==="scene"){ inner = renderScenePanel(); }
@@ -12454,6 +12507,7 @@ function renderPrologue(){
   const p = getPrologue()[currentScene||0];
   const pText = typeof p.text==="function" ? p.text() : p.text;
   const pChoices = typeof p.choices==="function" ? p.choices() : p.choices;
+  conhecer(p.char);
   let html = plate(p.char)+`${pText}<div class="choices">`;
   pChoices.forEach((c,i)=>{
     html += `<button class="choice-btn" onclick="prologueChoice(${i})">${c.label}</button>`;
@@ -12566,19 +12620,38 @@ function renderScenePanel(){
   if(cs.filler){
     const L = getActiveLocs()[cs.loc];
     const semNada = !anyLiveSceneAnywhere();
+    /* Enquanto houver conversa inédita em algum lugar, "investigar a vizinhança"
+       sai da tela. Sem isso dá para queimar período atrás de período num canto
+       vazio e atravessar o caso inteiro sem ler nenhum dos diálogos. */
+    const novidades = locaisComNovidade(cs.loc);
+    if(novidades.length){
+      return sceneCard(cs.loc, `<p><em>Nada de novo em ${L?L.name:cs.loc} agora.</em></p>
+       <p style="color:var(--brassL)">Há diálogo novo esperando em: ${novidades.join(" · ")}.</p>
+       <p style="font-size:.86rem;color:var(--faded)">O dia não anda daqui enquanto houver gente para ouvir. Volte ao mapa e procure o halo dourado.</p>
+       <div class="choices"><button class="choice-btn" onclick="startMap()">Voltar ao mapa (sem custo)</button></div>`);
+    }
     return sceneCard(cs.loc, `<p><em>Nada de novo em ${L?L.name:cs.loc} agora.</em></p>
      <div class="choices"><button class="choice-btn" onclick="passPeriod()">Investigar a vizinhança (custa 1 período)</button>
      <button class="choice-btn" onclick="startMap()">Voltar ao mapa (sem custo)</button>
      ${semNada ? `<button class="choice-btn" onclick="skipToNextCaso()">Nada mais em lugar nenhum — avançar para o próximo caso</button>` : ""}</div>`);
   }
   const sc = cs.scene;
+  conhecer(sc.char);
   const sceneText = typeof sc.text==="function" ? sc.text() : sc.text;
   let html = plate(sc.char)+`<div id="scene-text"><p>${sceneText}</p></div>
    <div class="choices" id="scene-choices">`;
+  let algumaAberta = false;
   sc.choices.forEach((c,i)=>{
     const ok = meetsReq(c.requires);
+    if(ok) algumaAberta = true;
     html += `<button class="choice-btn" ${ok?'':'disabled'} onclick="sceneChoice(${i})">${c.label}${ok?'':' <span class="choice-tag">'+motivoRequisito(c.requires)+'</span>'}</button>`;
   });
+  /* Saída de emergência: cena em que toda escolha está travada deixaria o
+     jogador olhando para botões cinzas sem nenhuma forma de sair. A cena não
+     é consumida — volta a aparecer quando o requisito for cumprido. */
+  if(!algumaAberta){
+    html += `<button class="choice-btn" onclick="startMap()">← Voltar ao mapa (sem custo) — nada aqui está ao seu alcance ainda</button>`;
+  }
   html += `</div>`;
   return sceneCard(cs.loc, html);
 }
