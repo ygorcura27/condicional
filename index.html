@@ -615,7 +615,16 @@ S.lastSeen = Date.now();
 let currentScene=null;
 let traveling=null;
 let evidencePopupQueue=[];
-window.closeEvidencePopup = function(){ evidencePopupQueue.shift(); render(); };
+/* Fecha só o aviso, sem re-renderizar a tela: os eventos fixos do calendário
+   (mode "scene" sem currentScene) são pintados à mão e quebrariam em render(). */
+window.closeEvidencePopup = function(){
+  evidencePopupQueue.shift();
+  const ov = document.querySelector('.evd-overlay');
+  if(!ov){ render(); return; }
+  ov.remove();
+  const proximo = renderEvidencePopup();
+  if(proximo) app.insertAdjacentHTML('beforeend', proximo);
+};
 function renderEvidencePopup(){
   if(!evidencePopupQueue.length) return "";
   const id = evidencePopupQueue[0];
@@ -727,12 +736,13 @@ window.chooseMode = function(m){
 function renderRevocation(){
   const n = S.flags.tentativasRevogacao||1;
   const casoNum = (S.season>=2&&S.season<=6) ? `Capítulo ${S.season} · Caso ${S.caso}` : (S.season>=7&&S.season<=12) ? `Capítulo ${S.season} · Caso ${S.caso}` : (S.season>1 ? `Capítulo ${S.season}` : `Nº 0${S.caso}`);
+  const handler = S.season>=7 ? {id:"beatriz", nome:"Beatriz"} : {id:"helena", nome:"Helena"};
   const flavor = n===1
-    ? `A tornozeleira dispara. Dois agentes batem na porta antes do anoitecer — não são da equipe de Helena. Você é detido, interrogado, solto sob advertência formal: uma última chance, registrada em ata, de recomeçar o caso do zero.`
+    ? `A tornozeleira dispara. Dois agentes batem na porta antes do anoitecer — não são da equipe de ${handler.nome}. Você é detido, interrogado, solto sob advertência formal: uma última chance, registrada em ata, de recomeçar o caso do zero.`
     : n===2
     ? `De novo. A tornozeleira dispara pela segunda vez neste caso. Dessa vez ninguém finge surpresa — nem você. A advertência vem mais seca, mas ainda vem.`
     : `Mais uma vez. Você perdeu a conta de quantas vezes já ouviu esse sermão hoje. A ata da revogação está virando um caderno só com o seu nome — mas, por algum motivo, ainda não é a página final.`;
-  return sceneCard("pf", plate("helena")+`<p>${flavor}</p>
+  return sceneCard("pf", plate(handler.id)+`<p>${flavor}</p>
    <div class="orn">◆ ◆ ◆</div>
    <p style="font-style:italic;color:var(--vermD);text-align:center">Modo Campanha: o caso recomeça do início.<br>O que veio antes dele permanece.</p>
    <div class="choices"><button class="choice-btn" onclick="backToCheckpoint()">Recomeçar o Caso ${casoNum} →</button></div>`);
@@ -929,7 +939,7 @@ function temTornozeleira(){ return !S.flags.semTornozeleira; }
 
 /* --- v0.6: conquistas -------------------------------------------------- */
 const CONQUISTAS = {
-  confiancaRapida:{nome:"Confiança Rápida", icone:"\u26D3", desc:"Tornozeleira removida já ao fim da Capítulo 1 — o Estado acreditou em você antes do previsto."},
+  confiancaRapida:{nome:"Confiança Rápida", icone:"\u26D3", desc:"Tornozeleira removida já ao fim do Capítulo 1 — o Estado acreditou em você antes do previsto."},
   fantasmaSemRastro:{nome:"Larápio de Elite", icone:"\uD83C\uDFC6", desc:"O Fantasma Sem Rastro: você escolheu o ouro e a liberdade, deixando a lei a ver navios."},
   perimetroLivre:{nome:"Perímetro Livre", icone:"\uD83D\uDDFA", desc:"Visitou uma locação fora do antigo raio autorizado sem nenhuma tornozeleira para denunciá-lo."},
   dossieIntegro:{nome:"Íntegro", icone:"\u2696", desc:"Entregou o Dossiê Paulista sem retirar uma linha — inclusive a que doía."},
@@ -7534,7 +7544,7 @@ const SCENES5 = {
  galeria: [
   {id:"galeria5_camila", once:true, char:"camila", requires:{flags:{pistaRedeBrenda:true}}, text:`Camila te recebe pela última vez na Vetriano — o inventário finalmente perto do fim. "Encontrei uma coisa que não sabia que precisava encontrar," ela diz, entregando um relatório de consultoria assinado com iniciais, não nome completo.`,
    choices:[{label:"Examinar a assinatura em iniciais.", effects:{skills:{percepcao:1}, flags:{galeria5_camila:true}},
-    result:`"B.V." — as mesmas iniciais que apareciam nos contratos de "consultoria" que Bárbara Alencar usava na Capítulo 2, você percebe com um arrepio. Redes diferentes, gerentes diferentes, mesma arquitetura de anonimato treinada por alguém que ensina isso profissionalmente.`}]},
+    result:`"B.V." — as mesmas iniciais que apareciam nos contratos de "consultoria" que Bárbara Alencar usava no Capítulo 2, você percebe com um arrepio. Redes diferentes, gerentes diferentes, mesma arquitetura de anonimato treinada por alguém que ensina isso profissionalmente.`}]},
   {id:"galeria5_final", once:true, char:"camila", requires:{flags:{galeria5_camila:true}}, text:`Camila fecha a última caixa do inventário e te entrega, por fim, sua própria opinião — não como testemunha, como pessoa. "Espero que prender essa mulher valha mais do que prender o Sardinha valeu. Pelo menos dessa vez, você sabe exatamente o que está enfrentando."`,
    choices:[{label:"Concordar — e seguir para a balsa.", effects:{flags:{galeria5_final:true}}, result:`Camila fecha a galeria atrás de você pela última vez nesta temporada.`}]}
  ],
@@ -7911,7 +7921,7 @@ const SCENES_S2C1 = {
  apto: [
   {id:"apto_s2c1_reflexao", once:true, char:"vice", text:function(){
     return S.flags.mestreDasSombras
-     ? `Você ainda não se acostumou com o peso diferente do dinheiro da Capítulo passada no bolso. Investigar lavagem de joia sacra tem um sabor irônico quando você mesmo guarda um segredo parecido.`
+     ? `Você ainda não se acostumou com o peso diferente do dinheiro do Capítulo passado no bolso. Investigar lavagem de joia sacra tem um sabor irônico quando você mesmo guarda um segredo parecido.`
      : `Outro caso, outra semana, a mesma tornozeleira. Você organiza as primeiras anotações do Cálice Imperial na parede do apartamento, ao lado do espaço vazio onde um dia pendurou a primeira tela.`;
    },
    choices:[{label:"Organizar as evidências antes de continuar.", effects:{skills:{percepcao:1}, flags:{apto_s2c1_reflexao:true}},
@@ -8212,7 +8222,7 @@ const SCENES_S2C3 = {
    },
    choices:[{label:"Organizar o dossiê antes do Chopin.", effects:{skills:{percepcao:1}, flags:{apto_s2c3_reflexao:true}},
     result:`Contrato, testemunhas, um nome de Niterói que se recusa a desaparecer da história. Amanhã, Copacabana.`}]},
-  {id:"apto_s2c3_wehmuth", once:true, char:"vice", requires:{flags:{pf_s2c3_dossieLotia:true}}, text:`Você relê suas próprias anotações da Capítulo passada sobre Otto Wehmuth — colecionador, dinheiro de porto, três gerações de silêncio comprado. Ele nunca realmente desapareceu. Só trocou de fachada.`,
+  {id:"apto_s2c3_wehmuth", once:true, char:"vice", requires:{flags:{pf_s2c3_dossieLotia:true}}, text:`Você relê suas próprias anotações do Capítulo passado sobre Otto Wehmuth — colecionador, dinheiro de porto, três gerações de silêncio comprado. Ele nunca realmente desapareceu. Só trocou de fachada.`,
    choices:[{label:"Anotar os paralelos entre os dois casos.", effects:{skills:{percepcao:1}, flags:{apto_s2c3_wehmuth:true}},
     result:`Wehmuth não é só um nome recorrente. É um padrão: dinheiro velho comprando silêncio novo, temporada após temporada, disfarçado de gente diferente.`}]},
   {id:"apto_s2c3_final", once:true, char:"vice", requires:{flags:{lotiaExposta:true}}, text:`Com a blindagem da Lótia exposta, você finalmente sente o peso da escada que vem subindo desde o Cálice Imperial: Bárbara, o Outeiro, Menezes, Wehmuth. Cada degrau leva mais perto de alguém que ainda não tem rosto.`,
@@ -8387,7 +8397,7 @@ const SCENES_S2C5 = {
    choices:[{label:"Concordar — e se preparar para o pior.", effects:{confianca:5, flags:{pf_s2c5_dossie:true}},
     result:`"Se der certo," ela diz, "isso fecha um capítulo que ninguém mais vai poder reabrir."`}]},
   {id:"pf_s2c5_final", once:true, char:"helena", requires:{flags:{pier_maua_espera:true}}, text:`Depois da poeira baixar no píer, Helena te encontra, séria, avaliando o resultado da noite. Seja qual for o desfecho, alguma coisa mudou permanentemente entre vocês dois nessas seis semanas.`,
-   choices:[{label:"Encarar o que vem a seguir.", effects:{}, result:`A Capítulo 2 chega ao fim, de um jeito ou de outro.`}]}
+   choices:[{label:"Encarar o que vem a seguir.", effects:{}, result:`O Capítulo 2 chega ao fim, de um jeito ou de outro.`}]}
  ],
  bar: [
   {id:"bar_s2c5_despedida", once:true, staleIf:{flags:{pier_maua_chegada:true, pier_maua_contentor:true}}, char:"nelson", requires:{flags:{prologueDoneS2C5:true}}, text:`Nelson te serve a última dose antes do píer, sem cobrar, do jeito que só faz nas ocasiões que ele considera importantes de verdade. "Seis semanas, Vincent. Cálice, cripta, cartório de luxo, bonde. Você não faz nada pela metade, hein."`,
@@ -8409,12 +8419,12 @@ const SCENES_S2C5 = {
     result:`Não falta mais nada entender. Só falta agir — e viver com o que quer que essa ação custe.`}]},
   {id:"apto_s2c5_carta", once:true, char:"vice", requires:{flags:{apto_s2c5_reflexao:true}}, text:function(){
     return S.flags.mestreDasSombras
-     ? `Você relê, uma última vez, a mensagem que confirma sua reputação crescente no submundo — construída na Capítulo passada, testada nesta. Depois de hoje, não tem mais como fingir que é só um consultor comum.`
+     ? `Você relê, uma última vez, a mensagem que confirma sua reputação crescente no submundo — construída no Capítulo passado, testada nesta. Depois de hoje, não tem mais como fingir que é só um consultor comum.`
      : `Você relê a mensagem de Helena confirmando o horário do píer. Nove anos de condicional convergindo, mais uma vez, pra uma única noite decisiva.`;
    },
    choices:[{label:"Guardar o celular e se preparar.", effects:{skills:{percepcao:1}, flags:{apto_s2c5_carta:true}},
     result:`Você dorme pouco, do jeito que sempre dorme antes de uma noite dessas.`}]},
-  {id:"apto_s2c5_final", once:true, char:"vice", requires:{flags:{pier_maua_espera:true}}, text:`De volta ao apartamento, tarde da noite, você finalmente processa o que a Capítulo 2 significou — não só o caso, mas o que ele revelou sobre quem você está se tornando, seis semanas de cada vez.`,
+  {id:"apto_s2c5_final", once:true, char:"vice", requires:{flags:{pier_maua_espera:true}}, text:`De volta ao apartamento, tarde da noite, você finalmente processa o que o Capítulo 2 significou — não só o caso, mas o que ele revelou sobre quem você está se tornando, seis semanas de cada vez.`,
    choices:[{label:"Descansar. Amanhã é outra temporada.", effects:{}, result:`"A Anatomia do Patrimônio" se encerra. O que vem a seguir já está se formando em algum lugar da Baía de Guanabara.`}]}
  ],
  municipal:[], corcovado:[], outeiro:[], chopin:[], santa_teresa:[]
@@ -8433,7 +8443,7 @@ const EPILOGUES_S2_FINAL = {
  final_parcial:`O navio zarpa com parte da carga ainda a bordo — o suficiente escapou, o suficiente foi apreendido, para que ninguém chame essa noite de vitória ou de derrota. Helena fecha o processo com a mesma sensação de sempre: quase.`
 };
 
-/* --- Matriz de crossover da Capítulo 3 (lê o histórico das Capítulos 1 e 2) --- */
+/* --- Matriz de crossover do Capítulo 3 (lê o histórico das Capítulos 1 e 2) --- */
 function getS3Setup(){
  return {
   inimigoAliado:(S.flags.sardinhaPreso && S.flags.wehmuthPreso) ? "Dourado_Isolado" : "Rede_Ativa",
@@ -8465,7 +8475,7 @@ const prologueS3C1 = [
    const setup = getS3Setup();
    return `Helena estende um mapa da Baía sobre a mesa, marcado com rotas de frete que cruzam o Atlântico. "Interpol interceptou três telas históricas 'redescobertas' em Lisboa. Falsificações perfeitas. O laudo aponta a mesma escola técnica do seu antigo mestre — mas a mão que pinta agora é canhota, e usa as rotas exatas que você e eu mapeamos na Baía." <br><br>`
     + (setup.liberdadeMovimento==="Livre" ? `Sem a tornozeleira, você caminha pelas duas margens sem acumular Calor — pela primeira vez, o mapa inteiro é seu.` : `A tornozeleira ainda pesa. Cada metro fora do raio autorizado ainda conta contra você.`)
-    + (setup.statusIsca==="Isca_Em_Mao_Alheia" ? ` E a quarta tela, sua isca da Capítulo 1, ainda está em mãos que você não escolheu — uma dívida em aberto que este caso pode cobrar.` : ``);
+    + (setup.statusIsca==="Isca_Em_Mao_Alheia" ? ` E a quarta tela, sua isca do Capítulo 1, ainda está em mãos que você não escolheu — uma dívida em aberto que este caso pode cobrar.` : ``);
   }, choices:[{label:"— Perguntar por onde o rastro reaparece.", effects:{}, next:1}]},
  {char:"vice", text:`"O 5º Ofício de Notas," Helena diz. "O subsolo do Valongo nunca foi totalmente esvaziado depois de Glauco. Alguém reabriu a operação — com gente nova guardando a porta."`,
   choices:[{label:"Descer ao Valongo de novo.", effects:{flags:{prologueDoneS3C1:true}}, result:`As mesmas escadas de pedra, um cheiro novo de mofo em cima do antigo.`}]}
@@ -8474,7 +8484,7 @@ function getPrologueS3C1(){ return prologueS3C1; }
 
 const SCENES_S3C1 = {
  cartorio: [
-  {id:"cartorio_s3_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C1:true}}, text:`O Palacete do Cais do Valongo continua de pé, mas alguma coisa mudou desde a Capítulo passada — luzes novas no subsolo, um gerador ligado onde antes só havia mofo e silêncio. Alguém investiu dinheiro nesse buraco depois que Glauco caiu.`,
+  {id:"cartorio_s3_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C1:true}}, text:`O Palacete do Cais do Valongo continua de pé, mas alguma coisa mudou desde o Capítulo passado — luzes novas no subsolo, um gerador ligado onde antes só havia mofo e silêncio. Alguém investiu dinheiro nesse buraco depois que Glauco caiu.`,
    choices:[{label:"Observar o movimento antes de descer.", effects:{skills:{percepcao:1}, flags:{cartorio_s3_chegada:true}},
     result:`Caminhões pequenos entram e saem pela carga de serviço, horários irregulares. Isso não é mais um arquivo esquecido — é uma operação ativa.`}]},
   {id:"cartorio_s3_registro", once:true, staleIf:{flags:{cartorio_s3_subsolo:true}}, char:"vice", requires:{flags:{cartorio_s3_chegada:true}}, text:`Antes de descer, você verifica o livro de visitantes do próprio prédio — burocracia que sobreviveu à queda de Glauco. Um nome aparece repetidas vezes nas últimas semanas, sempre nos mesmos horários noturnos.`,
@@ -8489,7 +8499,7 @@ const SCENES_S3C1 = {
     {label:"Entrar com autoridade institucional (requer estar sem tornozeleira).", requires:{flags:{semTornozeleira:true}},
      effects:{evidence:["s2ev4"], flags:{pistaEuropa:true, valongoLimpo:true}, confianca:5},
      result:`Você vasculha os registros abertamente, mandado nem é necessário — sua palavra basta. Os manifestos de frete mostram uma rota constante para Lisboa via um despachante de Portugal Velho.`},
-    {label:"Negociar uma fatia das joias da Capítulo 2 pelo acesso aos livros (requer reputação no submundo).", requires:{flags:{mestreDasSombras:true}},
+    {label:"Negociar uma fatia das joias do Capítulo 2 pelo acesso aos livros (requer reputação no submundo).", requires:{flags:{mestreDasSombras:true}},
      effects:{evidence:["s2ev4"], flags:{pistaEuropa:true, valongoAcordo:true}, submundo:10},
      result:`"Um colar," você promete, sem intenção nenhuma de cumprir tão cedo. Eles entregam os livros de bom grado — no submundo, promessas valem mais que dinheiro, até serem cobradas.`},
     {label:"Convencer os novos seguranças pela lábia (Lábia ≥ 6).", requires:{skillMin:{labia:6}},
@@ -8528,7 +8538,7 @@ const SCENES_S3C1 = {
   {id:"atelie_s3c1_tresTelas", once:true, char:"iris", requires:{flags:{prologueDoneS3C1:true}}, text:`Íris examina fotos das três telas apreendidas em Lisboa lado a lado com a memória que guarda da sua própria sombra vermelha. "A técnica dele evoluiu," ela nota, quase contra a vontade. "Mais confiante. Menos hesitante que a sua era, na mesma idade."`,
    choices:[{label:"Perguntar o que isso significa na prática.", effects:{skills:{percepcao:1}, flags:{atelie_s3c1_tresTelas:true}},
     result:`"Significa que ele praticou mais que você," Íris diz, sem rodeios. "Ou que teve mais tempo sem ser preso no meio do caminho."`}]},
-  {id:"atelie_s3c1_pigmento", once:true, char:"iris", requires:{flags:{atelie_s3c1_tresTelas:true}}, text:`Íris identifica, nas três telas de Lisboa, um pigmento específico que ela reconhece de um fornecedor carioca — o mesmo tipo de material que ela mesma já rastreou nesta e na Capítulo passada.`,
+  {id:"atelie_s3c1_pigmento", once:true, char:"iris", requires:{flags:{atelie_s3c1_tresTelas:true}}, text:`Íris identifica, nas três telas de Lisboa, um pigmento específico que ela reconhece de um fornecedor carioca — o mesmo tipo de material que ela mesma já rastreou nesta e no Capítulo passado.`,
    choices:[{label:"Rastrear o fornecedor atual do pigmento.", effects:{evidence:["ev14"], flags:{atelie_s3c1_pigmento:true}},
     result:`O fornecedor confirma uma venda recente, grande, para um comprador que pagou em dinheiro e não deixou nome — só um endereço de entrega numa ilha da Baía de Guanabara.`}]},
   {id:"atelie_s3c1_reflexao", once:true, char:"iris", requires:{flags:{atelie_s3c1_pigmento:true}}, text:`Íris guarda as fotos das três telas com um cuidado que parece mais pessoal do que profissional. "Sabe o que mais me incomoda nisso tudo? Ele aprendeu com o mesmo professor que você. Isso quer dizer que existe mais gente por aí que eu nunca vou saber que existe."`,
@@ -8581,7 +8591,7 @@ const SCENES_S3C2 = {
      effects:{flags:{profetaSeguido:true, profetaLaudado:true}, skills:{rede:1}, submundo:5, metodo:-4},
      result:`Você deixa a peça embarcar e coloca alguém em cima de quem assinou o manifesto. Ganha um nome novo na rede do porto e perde a única chance de examinar a peça em mãos — que, a essa altura, já está num porão a caminho de Lisboa.`}
    ]},
-  {id:"pier_maua_s3_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C2:true}}, text:`O Porto Maravilha de dia é um organismo diferente do que você conheceu na Capítulo passada — mais movimento, mais burocracia visível, mais gente de uniforme fingindo que tudo está sob controle.`,
+  {id:"pier_maua_s3_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C2:true}}, text:`O Porto Maravilha de dia é um organismo diferente do que você conheceu no Capítulo passado — mais movimento, mais burocracia visível, mais gente de uniforme fingindo que tudo está sob controle.`,
    choices:[{label:"Observar a rotina de despacho antes de abordar Weber.", effects:{skills:{percepcao:1}, flags:{pier_maua_s3_chegada:true}},
     result:`Um padrão salta aos olhos: containers de arte recebem inspeção visual rápida demais, sempre pelo mesmo inspetor. Weber não é aleatório — ele foi escolhido, ou se ofereceu.`}]},
   {id:"pier_maua_s3_manifesto", once:true, char:"vice", requires:{flags:{pier_maua_s3_chegada:true}}, text:`Antes de confrontar Weber, você consulta os manifestos públicos de carga dos últimos meses. Containers de "arte e antiguidades" saem toda quinta, sempre pro mesmo porto de destino em Lisboa.`,
@@ -8621,7 +8631,7 @@ const SCENES_S3C2 = {
     result:`Três nomes, um deles com padrão financeiro incompatível com o salário — Inspetor Weber, exatamente quem sua investigação já mirava.`}]},
   {id:"pf_s3c2_mandado", once:true, char:"helena", requires:{flags:{pf_s3c2_briefing:true}}, text:`Helena prepara um mandado provisório contra Weber, pronto pra ser executado assim que você confirmar a ligação com Cassiano. "Não vou usar isso a não ser que precise. Prefiro que ele fale por vontade própria."`,
    choices:[{label:"Aceitar a margem de manobra.", effects:{flags:{pf_s3c2_mandado:true}}, result:`Você guarda essa carta na manga — útil se a conversa com Weber sair pior do que o esperado.`}]},
-  {id:"pf_s3c2_retorno", once:true, char:"helena", requires:{flags:{pistaCassiano:true}}, text:`Você confirma pra Helena o nome do galpão de Paquetá. Ela franze a testa, cruzando com algo no próprio sistema. "Esse endereço já apareceu antes. Capítulo passada, um relatório sobre um professor aposentado."`,
+  {id:"pf_s3c2_retorno", once:true, char:"helena", requires:{flags:{pistaCassiano:true}}, text:`Você confirma pra Helena o nome do galpão de Paquetá. Ela franze a testa, cruzando com algo no próprio sistema. "Esse endereço já apareceu antes. Capítulo passado, um relatório sobre um professor aposentado."`,
    choices:[{label:'"Xavier Ramos. O mestre dele."', effects:{confianca:5, flags:{pf_s3c2_retorno:true}},
     result:`Helena conecta os pontos rápido. "Então ele reabriu o mesmo lugar. Isso é ou audácia, ou ele acha que ninguém mais lembra a história daquele galpão."`}]},
   {id:"pf_s3c2_final", once:true, char:"helena", requires:{flags:{pier_maua_s3_saida:true}}, text:`Você entrega a Helena a foto do selo falsificado, prova física da qualidade da operação de Cassiano. "Isso vai ser útil quando tudo isso virar processo," ela diz, guardando a evidência com cuidado. "Se é que vira processo, e não outra coisa."`,
@@ -8630,8 +8640,8 @@ const SCENES_S3C2 = {
  atelie: [
   {id:"atelie_s3c2_selo", once:true, char:"iris", requires:{flags:{prologueDoneS3C2:true}}, text:`Você leva pra Íris uma foto do lacre suspeito dos containers de Cassiano. "Reprodução de selo oficial," ela confirma rapidamente. "Boa o bastante pra enganar inspeção visual. Precisa de equipamento de gravação de precisão pra fazer isso."`,
    choices:[{label:"Perguntar onde se consegue esse equipamento.", effects:{skills:{percepcao:1}, flags:{atelie_s3c2_selo:true}},
-    result:`"Não é equipamento de ateliê comum," Íris diz. "É equipamento industrial — o mesmo tipo que Bárbara Alencar comprou na Capítulo 2, seu problema mais recente pode ter mais gente por trás do que parece."`}]},
-  {id:"atelie_s3c2_fornecedor", once:true, char:"iris", requires:{flags:{atelie_s3c2_selo:true}}, text:`Íris cruza o tipo de equipamento com os registros de importação que ela mesma ajudou a rastrear na Capítulo passada. "O mesmo fornecedor, de novo. Isso não é coincidência, Vincent. Isso é rede."`,
+    result:`"Não é equipamento de ateliê comum," Íris diz. "É equipamento industrial — o mesmo tipo que Bárbara Alencar comprou no Capítulo 2, seu problema mais recente pode ter mais gente por trás do que parece."`}]},
+  {id:"atelie_s3c2_fornecedor", once:true, char:"iris", requires:{flags:{atelie_s3c2_selo:true}}, text:`Íris cruza o tipo de equipamento com os registros de importação que ela mesma ajudou a rastrear no Capítulo passado. "O mesmo fornecedor, de novo. Isso não é coincidência, Vincent. Isso é rede."`,
    choices:[{label:"Anotar a conexão entre os casos.", effects:{flags:{atelie_s3c2_fornecedor:true}}, result:`Bárbara, Cassiano, talvez até mais gente — todos comprando do mesmo fornecedor de equipamento de falsificação de alta precisão. Alguém montou uma cadeia de suprimentos inteira pra esse submundo específico.`}]},
   {id:"atelie_s3c2_reflexao", once:true, char:"iris", requires:{flags:{atelie_s3c2_fornecedor:true}}, text:`Íris organiza as descobertas da temporada numa única folha — fornecedor, técnica, padrão de pagamento. "Isso é maior que um falsário solto, maior que uma RP gananciosa. Isso é indústria, Vincent. Alguém monta essa estrutura toda."`,
    choices:[{label:"Concordar com a gravidade da descoberta.", effects:{confianca:3, flags:{atelie_s3c2_reflexao:true}},
@@ -8661,13 +8671,13 @@ function getPrologueS3C3(){ return prologueS3C3; }
 
 const SCENES_S3C3 = {
  paqueta: [
-  {id:"paqueta_s3_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C3:true}}, text:`De volta ao Cemitério dos Pássaros, a paisagem parece menor do que na Capítulo 1 — ou talvez seja você que mudou. O galpão de Xavier ainda está lá, mas o cheiro de verniz industrial agora vem misturado com algo mais químico, mais moderno.`,
+  {id:"paqueta_s3_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C3:true}}, text:`De volta ao Cemitério dos Pássaros, a paisagem parece menor do que no Capítulo 1 — ou talvez seja você que mudou. O galpão de Xavier ainda está lá, mas o cheiro de verniz industrial agora vem misturado com algo mais químico, mais moderno.`,
    choices:[{label:"Observar o galpão de longe antes de entrar.", effects:{skills:{percepcao:1}, flags:{paqueta_s3_chegada:true}},
     result:`Luzes de laboratório, não de ateliê. Cassiano investiu pesado em equipamento — dinheiro que uma rede pequena não sustentaria sozinha.`}]},
   {id:"paqueta_s3_perimetro", once:true, char:"vice", requires:{flags:{paqueta_s3_chegada:true}}, text:`Você circula o perímetro do galpão em busca de uma entrada discreta. Uma janela lateral, meio quebrada, dá vista parcial pro interior — o suficiente pra confirmar o que Helena temia.`,
    choices:[{label:"Espiar pela janela antes de entrar pela frente.", effects:{skills:{infiltracao:1}, flags:{paqueta_s3_perimetro:true}},
     result:`Uma bancada cheia de amostras rotuladas com a sua própria caligrafia antiga — Cassiano catalogou seu trabalho como referência científica, não como inspiração. É mais perturbador do que qualquer ameaça direta.`}]},
-  {id:"paqueta_lab_confronto", once:true, char:"cassiano", requires:{cenasFeitas:["bar_s3c3_patrocinador","bar_s3c3_final","pf_s3c3_equipamento","pf_s3c3_final","atelie_s3c3_contramedida","atelie_s3c3_final"], flags:{prologueDoneS3C3:true}}, text:`O galpão de Xavier ganhou equipamento novo — centrífugas, espectrômetro portátil, uma bancada de química que não existia na Capítulo 1. Cassiano Brum, mais jovem do que Vincent esperava, nem se assusta com a interrupção. "Eu sei quem você é antes de você dizer. O canhoto original, procurando o segundo." Ele sorri. "Sua tinta antiga é uma referência excelente, a propósito. Obrigado por isso."`,
+  {id:"paqueta_lab_confronto", once:true, char:"cassiano", requires:{cenasFeitas:["bar_s3c3_patrocinador","bar_s3c3_final","pf_s3c3_equipamento","pf_s3c3_final","atelie_s3c3_contramedida","atelie_s3c3_final"], flags:{prologueDoneS3C3:true}}, text:`O galpão de Xavier ganhou equipamento novo — centrífugas, espectrômetro portátil, uma bancada de química que não existia no Capítulo 1. Cassiano Brum, mais jovem do que Vincent esperava, nem se assusta com a interrupção. "Eu sei quem você é antes de você dizer. O canhoto original, procurando o segundo." Ele sorri. "Sua tinta antiga é uma referência excelente, a propósito. Obrigado por isso."`,
    choices:[
     {label:"Identificar a fraude na assinatura química (Falsificação ≥ 9 — dificuldade elevada pela matriz misturada).", requires:{skillMin:{falsificacao:9}},
      effects:{evidence:["ev13"], flags:{cassianoExposto:true}, confianca:10},
@@ -8799,7 +8809,7 @@ const SCENES_S3C4 = {
      : `Você entrega a Helena o mapa rabiscado que sobrou do cofre vazio. Ela franze a testa, tentando decifrar a rota. "Isso pode ser real, ou pode ser isca. Vamos ter que confiar no instinto."`;
    },
    choices:[{label:"Seguir o plano dela.", effects:{skills:{percepcao:1}, flags:{pf_s3c4_retorno:true}}, result:`Amanhã, o confronto final. Nem Helena nem você sabem exatamente o que esperar.`}]},
-  {id:"pf_s3c4_final", once:true, char:"helena", requires:{flags:{chopin_s3_saida:true}}, text:`Helena revê o plano de abordagem uma última vez com você. "Se isso der certo, fecha o círculo que a Capítulo 1 abriu. Se der errado..." Ela não termina a frase. Não precisa.`,
+  {id:"pf_s3c4_final", once:true, char:"helena", requires:{flags:{chopin_s3_saida:true}}, text:`Helena revê o plano de abordagem uma última vez com você. "Se isso der certo, fecha o círculo que o Capítulo 1 abriu. Se der errado..." Ela não termina a frase. Não precisa.`,
    choices:[{label:"Encarar o que vem a seguir.", effects:{}, result:`O Píer Mauá espera. A temporada inteira converge pra amanhã.`}]}
  ],
  atelie: [
@@ -8841,7 +8851,7 @@ const prologueS3C5 = [
  {char:"helena", text:function(){
    const setup = getS3FinalSetup();
    if(setup==="parceria") return `"Vocês dois trabalham como parceiros totais agora," Helena diz, sem ironia. Ela sabe que você pintou a primeira tela, sabe de tudo, e escolheu confiar mesmo assim. "Cassiano está numa balsa perto da Ilha do Sol. Vamos prendê-lo juntos, Vincent — dessa vez, do mesmo lado."`;
-   if(setup==="cela") return `A cela administrativa da PF tem uma mesa, uma cadeira e uma janela pequena demais para qualquer coisa além de luz. Sua condicional foi revogada na Capítulo 2; você está preso, oficialmente, enquanto Cassiano ainda circula livre. Tudo o que resta é a sua Rede de contatos — e uma carta que você pode ditar para Nelson, no Bar Alcatrão, pedindo um favor grande demais para ser inocente.`;
+   if(setup==="cela") return `A cela administrativa da PF tem uma mesa, uma cadeira e uma janela pequena demais para qualquer coisa além de luz. Sua condicional foi revogada no Capítulo 2; você está preso, oficialmente, enquanto Cassiano ainda circula livre. Tudo o que resta é a sua Rede de contatos — e uma carta que você pode ditar para Nelson, no Bar Alcatrão, pedindo um favor grande demais para ser inocente.`;
    return `Helena resume o que se sabe: Cassiano foge numa balsa de pesca perto da Ilha do Sol, o mesmo tipo de brecha de trânsito que a rede de Brenda usava na temporada passada. "Vamos precisar de rapidez, não de certeza," ela diz.`;
   }, choices:[{label:"— Seguir para o confronto final.", effects:{flags:{prologueDoneS3C5:true}}, next:1}]},
  {char:"vice", text:function(){
@@ -8854,15 +8864,15 @@ function getPrologueS3C5(){ return prologueS3C5; }
 
 const SCENES_S3C5 = {
  pier_maua: [
-  {id:"pier_maua_s3_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C5:true}}, text:function(){
+  {id:"pier_maua_s3c5_chegada", once:true, char:"vice", requires:{flags:{prologueDoneS3C5:true}}, text:function(){
     const setup = getS3FinalSetup();
     return setup==="cela"
      ? `Você chega ao Porto Maravilha escoltado, tecnicamente ainda sob custódia, mas com uma folga de horário que ninguém questiona em voz alta — parte do plano que Nelson armou.`
      : `O Porto Maravilha, de madrugada, guarda a mesma neblina de sempre. Em algum lugar perto da Ilha do Sol, uma balsa de pesca se prepara pra zarpar com o segundo pincel a bordo.`;
    },
-   choices:[{label:"Localizar a posição exata da balsa.", effects:{skills:{percepcao:1}, flags:{pier_maua_s3_chegada:true}},
+   choices:[{label:"Localizar a posição exata da balsa.", effects:{skills:{percepcao:1}, flags:{pier_maua_s3c5_chegada:true}},
     result:`As coordenadas do pescador batem exatas. A balsa está ali, luzes apagadas, motor baixo — pronta pra sumir a qualquer sinal de problema.`}]},
-  {id:"pier_maua_s3_aproximacao", once:true, char:"vice", requires:{flags:{pier_maua_s3_chegada:true}}, text:function(){
+  {id:"pier_maua_s3_aproximacao", once:true, char:"vice", requires:{flags:{pier_maua_s3c5_chegada:true}}, text:function(){
     const setup = getS3FinalSetup();
     if(setup==="cela") return `O motim técnico que Nelson armou começa a distrair a segurança do porto exatamente na hora combinada — luzes piscando, um alarme falso, confusão suficiente pra abrir uma brecha.`;
     if(setup==="parceria") return `Helena coordena a aproximação com precisão profissional — barcos de apoio posicionados, comunicação por rádio fechada, nada deixado ao acaso.`;
@@ -8881,7 +8891,7 @@ const SCENES_S3C5 = {
     {label:"Prendê-lo com as provas acumuladas (requer 3+ evidências desta temporada).", requires:{evidenceMin:3},
      effects:{flags:{cassianoPreso:true}, confianca:15},
      result:`Entre manifestos, amostras químicas e o bilhete de embarque, não sobra brecha nenhuma pra ele negar. Cassiano Brum é preso na prancha da própria balsa, o sorriso finalmente quebrando.`},
-    {label:"Deixá-lo fugir em troca de um acordo de silêncio sobre a Capítulo 1.", effects:{flags:{cassianoFugiu:true, silencioComprado:true}, submundo:10},
+    {label:"Deixá-lo fugir em troca de um acordo de silêncio sobre o Capítulo 1.", effects:{flags:{cassianoFugiu:true, silencioComprado:true}, submundo:10},
      result:`"Nenhum de nós dois quer que a EBA vire notícia," ele diz, e você concorda com um aceno mínimo. A balsa zarpa. Alguns segredos, vocês dois decidem, valem mais presos do que expostos.`},
     {label:"Confrontá-lo sem plano definido, só pela urgência.",
      effects:{flags:{cassianoFugiu:true}, calor:15},
@@ -8919,14 +8929,14 @@ const SCENES_S3C5 = {
      ? `Helena supervisiona a prisão de Cassiano Brum pessoalmente, o dossiê da temporada finalmente fechado com uma assinatura formal. "Bom trabalho, Vincent. Dos dois lados da história."`
      : `Helena recebe a notícia de que Cassiano escapou com o rosto impassível de quem já esperava por isso. "Ele volta," ela diz. "Gente como ele sempre volta."`;
    },
-   choices:[{label:"Concordar com a avaliação dela.", effects:{skills:{percepcao:1}, flags:{pf_s3c5_retorno:true}}, result:`Seja qual for o resultado, a Capítulo 3 está prestes a fechar seu círculo.`}]},
+   choices:[{label:"Concordar com a avaliação dela.", effects:{skills:{percepcao:1}, flags:{pf_s3c5_retorno:true}}, result:`Seja qual for o resultado, o Capítulo 3 está prestes a fechar seu círculo.`}]},
   {id:"pf_s3c5_final", once:true, char:"helena", requires:{flags:{pier_maua_s3_final_rescaldo:true}}, text:function(){
     const setup = getS3FinalSetup();
     if(setup==="parceria") return `Helena te encara, sem segredo nenhum mais entre vocês dois. "Você pintou a primeira tela, decidiu contar, e mesmo assim chegamos até aqui juntos. Isso conta pra alguma coisa, Vincent."`;
     if(setup==="cela") return `Helena vem te visitar na cela, depois de tudo. "Você orquestrou uma prisão inteira de dentro de uma cela administrativa. Vou ter que decidir o que fazer com você — de novo."`;
     return `Helena fecha o dossiê final da temporada com um misto de alívio e cansaço. "Mais um capítulo fechado, Vincent. Vamos ver o que a próxima temporada traz."`;
    },
-   choices:[{label:"Aceitar o que vier a seguir.", effects:{}, result:`A Capítulo 3 chega ao fim.`}]}
+   choices:[{label:"Aceitar o que vier a seguir.", effects:{}, result:`O Capítulo 3 chega ao fim.`}]}
  ],
  bar: [
   {id:"bar_s3c5_despedida", once:true, char:"nelson", requires:{flags:{prologueDoneS3C5:true}}, text:function(){
@@ -8955,7 +8965,7 @@ const SCENES_S3C5 = {
    choices:[{label:"Brindar com ele.", effects:{confianca:3}, result:`Vocês dois bebem em silêncio companheiro, o tipo que só anos de confiança constroem.`}]}
  ],
  atelie: [
-  {id:"atelie_s3c5_panorama", once:true, char:"iris", requires:{flags:{prologueDoneS3C5:true}}, text:`Íris organiza, pela última vez nesta temporada, tudo que passou pelas mãos dela: manifestos, amostras químicas, o kit de análise que ela mesma montou. "Capítulo inteira resolvida com ciência e teimosia, Vincent. Combinação estranha, mas funciona."`,
+  {id:"atelie_s3c5_panorama", once:true, char:"iris", requires:{flags:{prologueDoneS3C5:true}}, text:`Íris organiza, pela última vez nesta temporada, tudo que passou pelas mãos dela: manifestos, amostras químicas, o kit de análise que ela mesma montou. "Capítulo inteiro resolvido com ciência e teimosia, Vincent. Combinação estranha, mas funciona."`,
    choices:[{label:"Agradecer por toda a ajuda da temporada.", effects:{confianca:3, flags:{atelie_s3c5_panorama:true}},
     result:`"Não precisa agradecer toda vez," ela repete, pela enésima vez nesta temporada — mas sorri, dessa vez, sem esconder.`}]},
   {id:"atelie_s3c5_licao", once:true, char:"iris", requires:{flags:{atelie_s3c5_panorama:true}}, text:`Íris reflete sobre o que a temporada ensinou a ela profissionalmente. "Eu costumava achar que perícia era só sobre detectar o falso. Essa temporada me ensinou que às vezes é sobre reconhecer o que é genuinamente seu, mesmo imitado por outra mão."`,
@@ -8968,7 +8978,7 @@ const SCENES_S3C5 = {
    },
    choices:[{label:"Agradecer a constância dela.", effects:{confianca:3, flags:{atelie_s3c5_reacao:true}}, result:`Íris balança a cabeça, quase envergonhada com o agradecimento direto demais pro jeito dela.`}]},
   {id:"atelie_s3c5_final", once:true, char:"iris", requires:{flags:{pier_maua_s3_final_rescaldo:true}}, text:`Última visita ao ateliê nesta temporada. Íris te entrega uma pequena lasca emoldurada — um fragmento de uma das telas apreendidas, guardado como lembrança improvável de tudo que vocês dois atravessaram juntos.`,
-   choices:[{label:"Aceitar a lembrança.", effects:{}, result:`Você guarda o fragmento com o mesmo cuidado que Íris sempre trata qualquer coisa que passa pelas mãos dela. "O Segundo Pincel" — e a Capítulo 3 inteira — chega ao fim.`}]}
+   choices:[{label:"Aceitar a lembrança.", effects:{}, result:`Você guarda o fragmento com o mesmo cuidado que Íris sempre trata qualquer coisa que passa pelas mãos dela. "O Segundo Pincel" — e o Capítulo 3 inteiro — chega ao fim.`}]}
  ],
  municipal:[], corcovado:[], outeiro:[], chopin:[], santa_teresa:[], cartorio:[], paqueta:[]
 };
@@ -8983,11 +8993,11 @@ function chooseEpilogueS3Final(){
 }
 const EPILOGUES_S3_FINAL = {
  s3final_parceria:`Cassiano Brum é preso ao lado de Helena, os dois do mesmo lado da lei pela primeira vez sem reserva nenhuma. "O Segundo Pincel" fecha o círculo aberto pela sombra vermelha de nove anos atrás — dessa vez, sem segredo nenhum entre vocês dois.`,
- s3final_redencao:`Da cela onde a Capítulo 2 te deixou, você orquestra a prisão de Cassiano Brum usando nada além de contatos, cartas e um motim técnico comprado com favores antigos. Quando Helena souber do papel que você teve nisso — de dentro de uma cela — vai ter que decidir, de novo, o quanto confia em você.`,
+ s3final_redencao:`Da cela onde o Capítulo 2 te deixou, você orquestra a prisão de Cassiano Brum usando nada além de contatos, cartas e um motim técnico comprado com favores antigos. Quando Helena souber do papel que você teve nisso — de dentro de uma cela — vai ter que decidir, de novo, o quanto confia em você.`,
  s3final_preso:`Cassiano Brum é preso na própria balsa, cercado por provas demais para negar. A rede que ele reconstruiu sobre as ruínas da Lótia desmorona numa manhã de neblina no meio da Baía de Guanabara.`,
  s3final_silencio:`A balsa zarpa com Cassiano a bordo, livre — e com um acordo mudo entre dois falsários que nunca vai aparecer em nenhum relatório oficial. A EBA, o mestre em comum, a sombra vermelha: tudo isso continua sendo só entre vocês dois.`,
  s3final_escapou:`Cassiano desaparece na neblina antes que qualquer plano se organize. "O Segundo Pincel" continua solto em algum lugar da Europa, esperando a próxima tela em branco.`,
- s3final_revogado:`A tornozeleira dispara no cais, fora de qualquer raio autorizado. Cassiano Brum escapa pela última vez, e "O Segundo Pincel" fecha o círculo que a Capítulo 1 abriu sem nunca terminar de fechá-lo.`
+ s3final_revogado:`A tornozeleira dispara no cais, fora de qualquer raio autorizado. Cassiano Brum escapa pela última vez, e "O Segundo Pincel" fecha o círculo que o Capítulo 1 abriu sem nunca terminar de fechá-lo.`
 };
 
 
@@ -9417,7 +9427,7 @@ const SCENES_S4C5 = {
     return `A sala se esvazia devagar, ninguém satisfeito, todo mundo carregando pastas que não resolveram nada. O Talude 9 continua exatamente onde estava — um esqueleto esperando a próxima temporada.`;
   },
    choices:[{label:"Processar o resultado da Assembleia.", effects:{skills:{percepcao:1}, flags:{caixa_rescaldo:true}},
-    result:`Seja qual for o caminho escolhido, a Capítulo 4 está prestes a fechar seu capítulo.`}]}
+    result:`Seja qual for o caminho escolhido, o Capítulo 4 está prestes a fechar seu capítulo.`}]}
  ],
  bar:[
   {id:"bar_s4c5_despedida", once:true, char:"nelson", requires:{flags:{prologueDoneS4C5:true}}, text:`Nelson te serve a última dose antes da Assembleia. "Última rodada da temporada, Vincent. Você decide se sai como herói oficial ou como o novo dono secreto de um prédio fantasma."`,
@@ -9447,8 +9457,8 @@ const SCENES_S4C5 = {
     return `Helena recebe a notícia do impasse com resignação cansada. "Às vezes não dá pra resolver tudo, por mais que a gente queira. Pelo menos ninguém saiu ferido."`;
   },
    choices:[{label:"Encarar a reação dela.", effects:{skills:{percepcao:1}, flags:{pf_s4c5_retorno:true}}, result:`A relação entre vocês dois, construída ao longo de quatro temporadas, absorve mais uma camada de complexidade.`}]},
-  {id:"pf_s4c5_final", once:true, char:"helena", requires:{flags:{caixa_rescaldo:true}}, text:`Helena encerra o dossiê da Capítulo 4 com um misto de alívio e incerteza sobre o que vem a seguir. "Cada temporada com você fica mais difícil de categorizar, Vincent. Isso é elogio ou reclamação, eu ainda não decidi."`,
-   choices:[{label:"Aceitar a ambiguidade.", effects:{}, result:`A Capítulo 4 chega ao fim.`}]}
+  {id:"pf_s4c5_final", once:true, char:"helena", requires:{flags:{caixa_rescaldo:true}}, text:`Helena encerra o dossiê do Capítulo 4 com um misto de alívio e incerteza sobre o que vem a seguir. "Cada temporada com você fica mais difícil de categorizar, Vincent. Isso é elogio ou reclamação, eu ainda não decidi."`,
+   choices:[{label:"Aceitar a ambiguidade.", effects:{}, result:`O Capítulo 4 chega ao fim.`}]}
  ],
  apto: [
   {id:"apto_s4c5_reflexao", once:true, char:"vice", text:`Última noite antes da Assembleia. Você revê o mapa completo da temporada na parede — Carol, o Talude 9, Yamamoto, o supermercado, tudo convergindo pra amanhã.`,
@@ -9467,7 +9477,7 @@ const SCENES_S4C5 = {
      ? `Você volta ao apartamento mais rico e mais perigoso do que entrou nessa temporada, dono secreto de um esqueleto de concreto que ninguém mais sabe que é seu.`
      : `Você volta ao apartamento sem vitória clara, apenas o cansaço de uma temporada que resistiu a qualquer resolução fácil.`;
    },
-   choices:[{label:"Descansar. A Capítulo 4 terminou.", effects:{}, result:`"A Arquitetura do Vazio" chega ao fim — e com ela, mais um capítulo da história de Vincent Andrade.`}]}
+   choices:[{label:"Descansar. O Capítulo 4 terminou.", effects:{}, result:`"A Arquitetura do Vazio" chega ao fim — e com ela, mais um capítulo da história de Vincent Andrade.`}]}
  ],
  bardana:[], yamamoto:[], supermercado:[]
 };
@@ -9525,7 +9535,7 @@ const SCENES_S5C1 = {
     result:`Vocês dois saem separadamente, como combinado, se reencontrando só duas quadras depois — protocolo de segurança que já parece familiar demais pra quem se conhece há tão pouco tempo.`}]}
  ],
  leilao: [
-  {id:"leilao_s5c1_bulhoes", once:true, char:"bulhoes", requires:{flags:{urca_chegada:true}}, text:`Ricardo Bulhões, colaborador premiado desde a Capítulo 1, aceita examinar fotos do Ovo de Inverno como consultoria informal. "Fabergé de verdade, ou réplica de altíssima qualidade. Sem exame físico, nem eu arriscaria dizer qual."`,
+  {id:"leilao_s5c1_bulhoes", once:true, char:"bulhoes", requires:{flags:{urca_chegada:true}}, text:`Ricardo Bulhões, colaborador premiado desde o Capítulo 1, aceita examinar fotos do Ovo de Inverno como consultoria informal. "Fabergé de verdade, ou réplica de altíssima qualidade. Sem exame físico, nem eu arriscaria dizer qual."`,
    choices:[{label:"Pedir a opinião profissional dele mesmo assim.", effects:{skills:{percepcao:1}, flags:{leilao_s5c1_bulhoes:true}},
     result:`"A esmaltação tem uma textura ligeiramente uniforme demais," ele nota. "Fabergé original tinha imperfeições de mão. Isso é bom demais pra ser sincero — mas só um exame direto confirma."`}]},
   {id:"leilao_s5c1_historico", once:true, char:"bulhoes", requires:{flags:{leilao_s5c1_bulhoes:true}}, text:`Bulhões compartilha o histórico conhecido do mentor russo de Anya — um falsário lendário que ele mesmo já tentou rastrear anos atrás, sem sucesso. "Se essa peça é dele, ela vale mais pelo nome do criminoso do que pelo material precioso."`,
@@ -9822,7 +9832,7 @@ const SCENES_S5C4 = {
      : `O apartamento parece vazio demais depois que Anya foi embora pra São Paulo. Você encara o bilhete curto que ela deixou, relendo a mesma frase repetidamente: "Vou ficar bem. Cuide de você primeiro, moy dorogoy."`;
    },
    choices:[{label:"Processar o resultado da noite.", effects:{skills:{percepcao:1}, flags:{apto_s5c4_rescaldo:true}},
-    result:`Seja qual for o resultado, a Capítulo 5 está entrando na sua fase final — o Leilão de Sangue se aproxima.`}]}
+    result:`Seja qual for o resultado, o Capítulo 5 está entrando na sua fase final — o Leilão de Sangue se aproxima.`}]}
  ],
  leilao: [
   {id:"leilao_s5c4_bulhoes", once:true, char:"bulhoes", requires:{flags:{apto_s5c4_alerta:true}}, text:`Bulhões, ao saber vagamente que você precisa de referências de documentos de importação do século XIX, oferece acesso ao arquivo particular da própria casa de leilões. "Tenho registros de importação de arte de mais de cem anos. Deve ter algo útil aí."`,
@@ -9934,7 +9944,7 @@ const SCENES_S5C5 = {
      : `O salão esvazia lentamente, reféns liberados mas abalados, Zurov e seus homens fugindo com Anya como prisioneira. A vitória tática custou o preço mais alto possível.`;
   },
    choices:[{label:"Processar o desfecho do confronto.", effects:{skills:{percepcao:1}, flags:{copacabana_s5_rescaldo:true}},
-    result:`A Capítulo 5 está prestes a fechar seu capítulo mais intenso.`}]}
+    result:`O Capítulo 5 está prestes a fechar seu capítulo mais intenso.`}]}
  ],
  leilao: [
   {id:"leilao_s5c5_bulhoes", once:true, char:"bulhoes", requires:{flags:{copacabana_s5_chegada:true}}, text:`Bulhões, coincidentemente hospedado no Copacabana Palace durante o sequestro, te reconhece através do cordão de isolamento policial. "Vincent? O que diabos está acontecendo aqui?"`,
@@ -9969,13 +9979,13 @@ const SCENES_S5C5 = {
   },
    choices:[{label:"Absorver a reação dela.", effects:{skills:{percepcao:1}, flags:{pf_s5c5_retorno:true}}, result:`Seja qual for o resultado, a parceria entre vocês dois — construída ao longo de cinco temporadas — permanece intacta.`}]},
   {id:"pf_s5c5_final", once:true, char:"helena", requires:{flags:{copacabana_s5_rescaldo:true}}, text:function(){
-    if(S.flags.matrizAbortada) return `Helena encerra a Capítulo 5 com um caso aberto em vez de fechado. "Zurov continua em algum lugar, e um dia isso vai voltar," ela admite. "Mas ninguém morreu no Copacabana Palace, Vincent. Eu assino esse relatório dormindo."`;
+    if(S.flags.matrizAbortada) return `Helena encerra o Capítulo 5 com um caso aberto em vez de fechado. "Zurov continua em algum lugar, e um dia isso vai voltar," ela admite. "Mas ninguém morreu no Copacabana Palace, Vincent. Eu assino esse relatório dormindo."`;
     if(S.flags.matrizAceitavel) return `Helena encerra a temporada com quatro condenações prováveis e uma ausência. "Você salvou todo mundo naquele salão e ainda entregou metade do grupo," ela diz. "Só não me peça pra chamar isso de vitória enquanto o homem que apontou uma arma pra você estiver escolhendo restaurante em outro continente."`;
     return S.flags.mestreFalsario
      ? `Helena encerra a operação satisfeita, o sindicato russo inteiro sob custódia. "Capítulo 5 fechada com um final que eu nunca vou esquecer, Vincent. Você e Anya se saíram bem."`
-     : `Helena promete continuar a busca por Anya mesmo depois que a Capítulo 5 formalmente encerrar. "Ninguém desaparece completamente, Vincent. Vamos encontrá-la."`;
+     : `Helena promete continuar a busca por Anya mesmo depois que o Capítulo 5 formalmente encerrar. "Ninguém desaparece completamente, Vincent. Vamos encontrá-la."`;
   },
-   choices:[{label:"Aceitar o que vem a seguir.", effects:{}, result:`A Capítulo 5 chega ao fim.`}]}
+   choices:[{label:"Aceitar o que vem a seguir.", effects:{}, result:`O Capítulo 5 chega ao fim.`}]}
  ],
  apto: [
   {id:"apto_s5c5_reflexao", once:true, char:"vice", text:`Última noite antes do confronto final. Você revê a temporada inteira na parede do apartamento — o Ovo de Inverno, o Guignard, o diamante, a tinta ferrogálica, tudo convergindo pra essa noite no Copacabana Palace.`,
@@ -10000,7 +10010,7 @@ const SCENES_S5C5 = {
      : `Anya passa a madrugada checando as travas do apartamento, uma por uma, duas vezes. "Ele vai perceber em algumas semanas," ela diz, sem drama. "E aí ele vai lembrar da sua mão antes de lembrar do seu rosto. Falsário não esquece mão."`;
     return S.flags.mestreFalsario
      ? `De volta ao apartamento, com Anya ao seu lado, você processa a vitória mais completa da temporada. "Nós conseguimos," ela repete, ainda incrédula. "De verdade, conseguimos."`
-     : `O apartamento vazio ecoa mais alto do que nunca sem Anya. Você encara o espaço que ela ocupava há semanas, sabendo que a Capítulo 6 vai começar com uma busca, não com um caso novo.`;
+     : `O apartamento vazio ecoa mais alto do que nunca sem Anya. Você encara o espaço que ela ocupava há semanas, sabendo que o Capítulo 6 vai começar com uma busca, não com um caso novo.`;
   },
    choices:[{label:"Encarar o que vem a seguir.", effects:{}, result:`"O Toque de São Petersburgo" chega ao fim.`}]}
  ],
@@ -13237,7 +13247,7 @@ function renderEndCaso5(){
     ? `<button class="choice-btn" onclick="resetGame()">Recomeçar</button>`
     : `<button class="choice-btn" onclick="inicializarSeason2()"><strong>Iniciar Capítulo 2 — «A Anatomia do Patrimônio»</strong> →</button>
        <button class="choice-btn" onclick="resetGame()">Recomeçar do zero</button>`;
-  return sceneCard("balsa", `<div class="seal">D·P·F</div><p style="font-variant:small-caps;letter-spacing:.14em;color:var(--faded)">Encerramento do Caso Nº 05 — Fim da Capítulo 1</p>
+  return sceneCard("balsa", `<div class="seal">D·P·F</div><p style="font-variant:small-caps;letter-spacing:.14em;color:var(--faded)">Encerramento do Caso Nº 05 — Fim do Capítulo 1</p>
    <p>${text}</p>
    <div class="orn">◆ ◆ ◆</div>
    <div class="choices">${btns}</div>
@@ -13898,7 +13908,7 @@ function renderEndSeason(){
   const season = S.season;
   if(S.flags["revogadoS"+season]){
     return sceneCard("apto", `<div class="seal">D·P·F</div><p style="font-variant:small-caps;letter-spacing:.14em;color:var(--faded)">Encerramento — Capítulo ${season}</p>
-     <p>A tornozeleira dispara antes do desfecho. A Capítulo ${season} fecha sem resolução.</p>
+     <p>A tornozeleira dispara antes do desfecho. O Capítulo ${season} fecha sem resolução.</p>
      <div class="choices"><button class="choice-btn" onclick="resetGame()">Recomeçar</button></div>`);
   }
   const nextFns = {2:"inicializarSeason3", 3:"inicializarSeason4", 4:"inicializarSeason5", 5:"inicializarSeason6"};
