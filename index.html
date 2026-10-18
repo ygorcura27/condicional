@@ -903,6 +903,7 @@ body.mj-aberto{overflow:hidden}
 .evd-item{--pc:#b98f2f}
 .evd-fala{margin:14px 6px 0;font-style:italic;color:#4a3a28;line-height:1.45}
 .evd-fala span{display:block;font-style:normal;font-size:.8rem;color:#8a7a5a;margin-top:3px}
+.evd-pag .evd-valor{font-family:var(--titulo);font-size:2.4rem;font-weight:700;color:#3d6b3d;margin:6px 0 2px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -1029,6 +1030,7 @@ window.closeEvidencePopup = function(){
 function renderEvidencePopup(){
   if(!evidencePopupQueue.length) return "";
   if(String(evidencePopupQueue[0]).indexOf('item:')===0) return itemPopupHtml(evidencePopupQueue[0]);
+  if(String(evidencePopupQueue[0]).indexOf('pag:')===0) return pagamentoPopupHtml(evidencePopupQueue[0]);
   registrarProvas();
   const id = evidencePopupQueue[0], tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id);
   if(renderEvidencePopup._soou!==id){ renderEvidencePopup._soou=id; setTimeout(()=>som.efeito('prova'),120); }
@@ -1213,9 +1215,29 @@ function ganhoConfianca(v){
 /* Honorário de consultoria menos o custo de viver sob condicional (aluguel,
    material de ateliê, taxa da tornozeleira). Sem esse funil o jogador terminava
    a campanha com R$ 84 mil e nenhum requisito de dinheiro significava nada. */
+function pagarHonorario(bruto){
+  const v=renda(bruto); if(!v) return; S.money+=v;
+  evidencePopupQueue.push('pag:'+v+':'+(S.season>=7?'Beatriz':'Helena'));
+}
+function pagamentoPopupHtml(entrada){
+  const [,v,de]=entrada.split(':');
+  if(renderEvidencePopup._soou!==entrada){ renderEvidencePopup._soou=entrada; setTimeout(()=>som.efeito('moeda'),120); }
+  return `<div class="evd-overlay" onclick="if(event.target===this) window.closeEvidencePopup()">
+   <div class="evd-modal evd-nova evd-pag" role="dialog" aria-label="Honorário recebido">
+    <div class="evd-modal-title">Honorário recebido</div>
+    <div class="evd-valor">R$ ${(+v).toLocaleString('pt-BR')}</div>
+    <p class="evd-fala">Consultoria do caso fechado, já descontados aluguel, condução e a taxa da tornozeleira.<span>— depósito autorizado por ${de}</span></p>
+    <p class="evd-guardada">Caixa: R$ ${S.money.toLocaleString('pt-BR')}${lojaLoc()?' · o Nelson atende '+lojaLoc().onde:''}</p>
+    <div class="evd-acoes"><button class="choice-btn evd-modal-btn" onclick="window.closeEvidencePopup()">Continuar</button></div>
+   </div></div>`;
+}
 function renda(bruto){
-  const custoDeVida = 500 + 90*(S.season||1);
-  return Math.max(0, Math.round(bruto*0.45) - custoDeVida);
+  /* Honorário de consultor por caso fechado, já descontado o custo de vida.
+     Antes sobravam R$ 85–300 por caso e quem jogava limpo terminava a campanha
+     com uns R$ 6 mil: não dava para a loja do Nelson nem para o guarda-roupa.
+     Agora o honesto junta ~R$ 50 mil no jogo todo; o dinheiro sujo continua maior. */
+  const custoDeVida = 300 + 40*(S.season||1);
+  return Math.max(0, Math.round(bruto*0.8) - custoDeVida);
 }
 
 function applyEffects(eff){
@@ -7252,6 +7274,9 @@ function forjaAction(caso){
         }
       }
 
+      /* o cliente paga pela peça: inteira se passou limpa, parte se passou marcada */
+      const pagamento = (grau==='limpo' ? 1500 : grau==='marcado' ? 600 : 0) * (caso.dificuldade||1);
+      if(pagamento){ S.money += pagamento; if(window.som) som.efeito('moeda'); }
       const cor = grau==='limpo' ? '#5FA08C' : grau==='marcado' ? '#C98B3A' : '#A83220';
       const cab = grau==='limpo' ? 'PEÇA LIMPA' : grau==='marcado' ? 'PEÇA MARCADA' : 'PEÇA QUEIMADA';
       const desf = grau==='limpo' ? caso.desfechoLimpo : grau==='marcado' ? caso.desfechoMarcado : caso.desfechoQueimado;
@@ -7261,6 +7286,7 @@ function forjaAction(caso){
       linhas.push(desf);
       linhas.push('<i>'+caso.explica+'</i>');
       linhas.push('<span style="opacity:.7">Operações gastas: '+info.gasto+' de '+info.prazo+'.</span>');
+      linhas.push(pagamento ? '<span>O cliente paga R$ '+pagamento.toLocaleString('pt-BR')+' pela peça.</span>' : '<span style="opacity:.7">Peça queimada não se cobra.</span>');
 
       document.getElementById('scene-text').innerHTML +=
         '<div class="tell" style="margin-top:15px;color:'+cor+'">'+linhas.filter(Boolean).join('<br><br>')+'</div>';
@@ -14798,7 +14824,7 @@ window.continueToCase2 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = S.flags.quaseRevogado ? 50 : Math.min(40, Math.round(S.meters.calor/2));
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   S.flags.caso2Started=true;
   mode="prologue"; currentScene=0; traveling=null;
@@ -14810,7 +14836,7 @@ window.continueToCase3 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14821,7 +14847,7 @@ window.continueToCase4 = function(){
   S.day=1; S.period=0;
   S.loc="cartorio"; S.trail=["cartorio"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14832,7 +14858,7 @@ window.continueToCase5 = function(){
   S.day=1; S.period=0;
   S.loc="balsa"; S.trail=["balsa"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14845,7 +14871,7 @@ window.inicializarSeason2 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(20, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(3000);
+  pagarHonorario(3000);
   S.ended=false;
   saveSeasonCheckpoint();
   mode="prologue"; currentScene=0; traveling=null;
@@ -14857,7 +14883,7 @@ window.continueToS2Case2 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14868,7 +14894,7 @@ window.continueToS2Case3 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14879,7 +14905,7 @@ window.continueToS2Case4 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14890,7 +14916,7 @@ window.continueToS2Case5 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14901,7 +14927,7 @@ window.inicializarSeason3 = function(){
   S.season=3; S.caso=1;
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   saveSeasonCheckpoint();
   mode="prologue"; currentScene=0; traveling=null;
@@ -14913,7 +14939,7 @@ window.continueToS3Case2 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14924,7 +14950,7 @@ window.continueToS3Case3 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14935,7 +14961,7 @@ window.continueToS3Case4 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14946,7 +14972,7 @@ window.continueToS3Case5 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14957,7 +14983,7 @@ window.inicializarSeason4 = function(){
   S.season=4; S.caso=1;
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
-  S.money += renda(4000);
+  pagarHonorario(4000);
   S.ended=false;
   saveSeasonCheckpoint();
   mode="prologue"; currentScene=0; traveling=null;
@@ -14969,7 +14995,7 @@ window.continueToS4Case2 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14980,7 +15006,7 @@ window.continueToS4Case3 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -14990,7 +15016,7 @@ window.continueToS4Case4 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15001,7 +15027,7 @@ window.continueToS4Case5 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15022,7 +15048,7 @@ window.continueToS5Case2 = function(){
   S.day=1; S.period=0;
   S.loc="ipanema"; S.trail=["ipanema"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15033,7 +15059,7 @@ window.continueToS5Case3 = function(){
   S.day=1; S.period=0;
   S.loc="ufrj"; S.trail=["ufrj"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15043,7 +15069,7 @@ window.continueToS5Case4 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15054,7 +15080,7 @@ window.continueToS5Case5 = function(){
   S.day=1; S.period=0;
   S.loc="copacabana"; S.trail=["copacabana"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15077,7 +15103,7 @@ window.inicializarSeason7 = function(){
   S.season=7; S.caso=1;
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
-  S.money += renda(5000);
+  pagarHonorario(5000);
   S.meters.calor = Math.round(S.meters.calor/2);
   S.ended=false;
   saveSeasonCheckpoint();
@@ -15090,7 +15116,7 @@ window.inicializarSeason8 = function(){
   S.season=8; S.caso=1;
   S.day=1; S.period=0;
   S.loc="jardins"; S.trail=["jardins"];
-  S.money += renda(3000);
+  pagarHonorario(3000);
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
   S.ended=false;
   saveSeasonCheckpoint();
@@ -15103,7 +15129,7 @@ window.inicializarSeason9 = function(){
   S.season=9; S.caso=1;
   S.day=1; S.period=0;
   S.loc="paulista"; S.trail=["paulista"];
-  S.money += renda(3000);
+  pagarHonorario(3000);
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
   S.ended=false;
   saveSeasonCheckpoint();
@@ -15116,7 +15142,7 @@ window.continueToS9Case2 = function(){
   S.day=1; S.period=0;
   S.loc="cartorio"; S.trail=["cartorio"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15126,7 +15152,7 @@ window.continueToS9Case3 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15137,7 +15163,7 @@ window.continueToS9Case4 = function(){
   S.day=1; S.period=0;
   S.loc="jockeyClub"; S.trail=["jockeyClub"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2000);
+  pagarHonorario(2000);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15148,7 +15174,7 @@ window.continueToS9Case5 = function(){
   S.day=1; S.period=0;
   S.loc="vanguard"; S.trail=["vanguard"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2500);
+  pagarHonorario(2500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15159,7 +15185,7 @@ window.inicializarSeason10 = function(){
   S.season=10; S.caso=1;
   S.day=1; S.period=0;
   S.loc="morumbi"; S.trail=["morumbi"];
-  S.money += renda(3000);
+  pagarHonorario(3000);
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
   S.ended=false;
   saveSeasonCheckpoint();
@@ -15172,7 +15198,7 @@ window.continueToS10Case2 = function(){
   S.day=1; S.period=0;
   S.loc="deposito"; S.trail=["deposito"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15182,7 +15208,7 @@ window.continueToS10Case3 = function(){
   S.day=1; S.period=0;
   S.loc="jardins"; S.trail=["jardins"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15192,7 +15218,7 @@ window.continueToS10Case4 = function(){
   S.day=1; S.period=0;
   S.loc="jardins"; S.trail=["jardins"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15203,7 +15229,7 @@ window.continueToS10Case5 = function(){
   S.day=1; S.period=0;
   S.loc="represa"; S.trail=["represa"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2500);
+  pagarHonorario(2500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15214,7 +15240,7 @@ window.inicializarSeason11 = function(){
   S.season=11; S.caso=1;
   S.day=1; S.period=0;
   S.loc="paulista"; S.trail=["paulista"];
-  S.money += renda(3000);
+  pagarHonorario(3000);
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
   S.ended=false;
   saveSeasonCheckpoint();
@@ -15226,7 +15252,7 @@ window.continueToS11Case2 = function(){
   S.day=1; S.period=0;
   S.loc="pf"; S.trail=["pf"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15237,7 +15263,7 @@ window.continueToS11Case3 = function(){
   S.day=1; S.period=0;
   S.loc="servidor"; S.trail=["servidor"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15247,7 +15273,7 @@ window.continueToS11Case4 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15258,7 +15284,7 @@ window.continueToS11Case5 = function(){
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(2500);
+  pagarHonorario(2500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15269,7 +15295,7 @@ window.inicializarSeason12 = function(){
   S.season=12; S.caso=1;
   S.day=1; S.period=0;
   S.loc="apto"; S.trail=["apto"];
-  S.money += renda(3000);
+  pagarHonorario(3000);
   S.meters.calor = Math.min(20, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
   S.ended=false;
   if(!S.flags.finalLei && !S.flags.finalPaixao && !S.flags.finalLobo) S.flags.finalLei = true;
@@ -15282,7 +15308,7 @@ window.continueToS6Case2 = function(){
   S.day=1; S.period=0;
   S.loc="mam"; S.trail=["mam"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15293,7 +15319,7 @@ window.continueToS6Case3 = function(){
   S.day=1; S.period=0;
   S.loc="copacabana"; S.trail=["copacabana"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
@@ -15303,7 +15329,7 @@ window.continueToS6Case4 = function(){
   S.day=1; S.period=0;
   S.loc="lapa"; S.trail=["lapa"];
   S.meters.calor = Math.min(30, Math.round(S.meters.calor/2)); S.meters.confianca = clamp(S.meters.confianca - 6);
-  S.money += renda(1500);
+  pagarHonorario(1500);
   S.ended=false;
   mode="prologue"; currentScene=0; traveling=null;
   save(); render();
