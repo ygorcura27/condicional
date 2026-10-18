@@ -72,13 +72,28 @@ button:focus-visible{outline:2px solid var(--brassL);outline-offset:2px}
 #guarda .gr-palco{position:relative;background:radial-gradient(ellipse at 50% 35%,#3a2c1e,#0c0a08 70%);border:1px solid #3a2c18;border-radius:3px;min-height:360px}
 #guarda .gr-palco canvas{display:block;width:100%;height:100%;min-height:360px;cursor:grab;touch-action:none}
 #guarda .gr-palco.sem3d canvas{display:none}
-#guarda .gr-nome{position:absolute;left:0;right:0;bottom:8px;margin:0;text-align:center;font-style:italic;color:#efe2c2;text-shadow:0 1px 3px #000}
 #guarda .gr-g{border:0;margin:0 0 12px;padding:0}
 #guarda .gr-g legend{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:#9a8a6a;margin-bottom:6px}
 #guarda .gr-g button{font:inherit;font-size:.86rem;margin:0 6px 6px 0;padding:6px 10px;border-radius:3px;border:1px solid #4a3a22;background:#1e1810;color:#e8dcc4;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 #guarda .gr-g button[aria-pressed="true"]{border-color:#d8b45a;background:#3a2c16;color:#fff2cc}
 #guarda .gr-g button i{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #6a5a40}
-#guarda .gr-pe{display:flex;justify-content:flex-end;gap:10px;padding:10px 18px 16px;border-top:1px solid #3a2c18}
+#guarda .gr-pe{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:10px 18px 16px;border-top:1px solid #3a2c18}
+#guarda .gr-topo{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+#guarda .gr-caixa-v{margin:0;font-variant:small-caps;letter-spacing:.1em;color:#e9c873;font-size:1rem}
+#guarda .gr-abas{display:flex;gap:4px;padding:10px 18px 0;border-bottom:1px solid #3a2c18}
+#guarda .gr-abas button{font:600 .82rem Georgia,serif;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border:1px solid #3a2c18;border-bottom:0;border-radius:3px 3px 0 0;background:#1a140e;color:#9a8a6a;cursor:pointer}
+#guarda .gr-abas button[aria-selected="true"]{background:#2a2016;color:#fff2cc;border-color:#6a4f22}
+#guarda .gr-g button em{font-style:normal;font-size:.7rem;letter-spacing:.04em;padding:1px 5px;border-radius:2px;margin-left:2px}
+#guarda .gr-preco{background:#2a3a2a;color:#9fe0b0}
+#guarda .gr-ex{background:#4a3410;color:#ffd88a}
+#guarda .gr-trava{background:#2a2420;color:#8a7a6a}
+#guarda .gr-info{position:absolute;left:10px;right:10px;bottom:8px;text-align:center;text-shadow:0 1px 3px #000;pointer-events:none}
+#guarda .gr-info b{display:block;font-style:italic;color:#efe2c2}
+#guarda .gr-info span{display:block;font-size:.8rem;color:#c8b898}
+#guarda .gr-info i{display:block;font-size:.76rem;color:#e9c873}
+#guarda .gr-aviso{margin:0 auto 0 0;font-size:.82rem;color:#e8a088}
+#guarda .gr-nota{font-size:.8rem;color:#9a8a6a;margin:4px 0 0}
+#guarda .gr-veste:disabled{opacity:.45;cursor:not-allowed}
 #guarda .gr-pe button{font:600 .9rem Georgia,serif;letter-spacing:.08em;text-transform:uppercase;padding:9px 16px;border-radius:3px;cursor:pointer}
 #guarda .gr-cancela{background:transparent;color:#b8a888;border:1px solid #4a3a22}
 #guarda .gr-veste{background:#b98f2f;color:#14100c;border:1px solid #d8b45a}
@@ -2580,7 +2595,13 @@ function achievementBlock(id){
   return `<div style="border:1px solid var(--brass);background:rgba(185,143,47,.09);padding:10px 12px;margin:14px 0">
    <div style="font-variant:small-caps;letter-spacing:.16em;color:var(--brassL);font-size:.82rem">${a.icone} Conquista desbloqueada</div>
    <div style="font-weight:700;margin:2px 0 3px">${a.nome}</div>
-   <div style="font-size:.86rem;color:var(--faded);font-style:italic">${a.desc}</div></div>`;
+   <div style="font-size:.86rem;color:var(--faded);font-style:italic">${a.desc}</div>${recompensaHtml(id,true)}</div>`;
+}
+/* Peça exclusiva que a conquista libera no guarda-roupa do apartamento. */
+function recompensaHtml(id,ganha){
+  const r = window.figurino && window.figurino.recompensa && window.figurino.recompensa(id);
+  if(!r) return "";
+  return `<div style="font-size:.8rem;color:var(--brassL);margin-top:3px">${ganha?'Exclusivo liberado no guarda-roupa':'Recompensa exclusiva'}: <b>${r}</b></div>`;
 }
 function renderConquistas(){
   const lista = Array.isArray(S.conquistas) ? S.conquistas : [];
@@ -2791,12 +2812,12 @@ function achievementCard(id){
     return `<div style="border:1px solid var(--brass);background:rgba(185,143,47,.09);padding:9px 12px;margin:8px 0;display:flex;gap:10px;align-items:flex-start">
      <span style="font-size:1.3rem;line-height:1">${a.icone}</span>
      <div><div style="font-weight:700">${a.nome}</div>
-     <div style="font-size:.82rem;color:var(--faded);font-style:italic">${a.desc}</div></div></div>`;
+     <div style="font-size:.82rem;color:var(--faded);font-style:italic">${a.desc}</div>${recompensaHtml(id,true)}</div></div>`;
   }
   return `<div style="border:1px solid #3a3428;background:rgba(0,0,0,.15);padding:9px 12px;margin:8px 0;display:flex;gap:10px;align-items:flex-start;opacity:.55">
    <span style="font-size:1.3rem;line-height:1">🔒</span>
    <div><div style="font-weight:700">???</div>
-   <div style="font-size:.82rem;color:var(--faded);font-style:italic">Ainda não desbloqueada.</div></div></div>`;
+   <div style="font-size:.82rem;color:var(--faded);font-style:italic">Ainda não desbloqueada.</div>${recompensaHtml(id,false)}</div></div>`;
 }
 function renderConquistasScreen(){
   const total = Object.keys(CONQUISTAS).length;
@@ -15013,7 +15034,12 @@ function vestirVincent(grupo){
   const mrx=new THREE.MeshBasicMaterial({color:0xd8b45a,transparent:true,opacity:.55,depthFunc:THREE.GreaterDepth,depthWrite:false,toneMapped:false});
   const rx=new THREE.Group(); const corpo=new THREE.Mesh(new THREE.CylinderGeometry(.3,.24,1.55,12),mrx); corpo.position.y=.8; const cabeca=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),mrx); cabeca.position.y=1.78;
   rx.add(corpo,cabeca); rx.scale.setScalar(1.15); rx.children.forEach(o=>o.renderOrder=9); grupo.add(rx);
-  const u=p.userData; return {pE:u.pE, pD:u.pD, bE:u.bE, bD:u.bD, tornoz:u.led, faixa:u.tornoz, ver:window.figurino.versao};
+  // o veículo da garagem: estacionado ao lado dele, e levando-o nas viagens por terra
+  const cena=grupo.parent; if(grupo.userData.veic && cena) cena.remove(grupo.userData.veic);
+  const vid=window.figurino.atual().veiculo, veic= vid && vid!=='nenhum' ? window.figurino.veiculo(vid) : null;
+  if(veic){ veic.scale.setScalar(veic.userData.tipo==='moto'?1.15:.7); if(cena) cena.add(veic); }
+  grupo.userData.veic=veic;
+  const u=p.userData; return {pE:u.pE, pD:u.pD, bE:u.bE, bD:u.bD, quadril:u.quadril, boneco:p, veic, tornoz:u.led, faixa:u.tornoz, ver:window.figurino.versao};
 }
 function montarMundo(){
   const G=construir();
@@ -15511,7 +15537,7 @@ mapa3d.viajar=function(id, confirmado){
   traveling={from:S.loc, to:id};
   st.seguir=true;
   const total=st.viagem.pernas.reduce((s,p)=>s+(p.tipo==='pe'?p.pts.length:p.tipo==='barco'?8:0),0);
-  st.viagem.vel=Math.max(3.4,total/3.6);    // viagens longas não passam de ~4 s
+  st.viagem.vel=Math.max(3.4,total/3.6)*(M.corpoV.veic?1.9:1);    // viagens longas não passam de ~4 s; de carro ou moto, metade disso
   if(reduzMov() || window.__mapa3dInstantaneo) concluirViagem();
 };
 function concluirViagem(){
@@ -15646,10 +15672,18 @@ function quadro(ts){
   const andando=passoViagem(dtReal);
   const T=M.G.T, tt=T(Math.round(st.pos.x),Math.round(st.pos.z)), tunel=tt==='tunel', naBarca=st.naBarca;
   const yV= st.naAgua ? (naBarca?.42:.3) : tt==='ponte'?.38:.18;
-  M.vincent.visible=!tunel && !naBarca; M.anel.visible=!tunel;
-  st.fase=(st.fase||0)+(andando&&!naBarca?dt*11:0);
-  M.vincent.position.set(st.pos.x+.5,yV+(andando&&!naBarca?Math.abs(Math.sin(st.fase))*.05:0),st.pos.z+.5);
-  const cv=M.corpoV, bal=andando&&!naBarca?Math.sin(st.fase)*.6:0; cv.pE.rotation.x=bal; cv.pD.rotation.x=-bal; cv.bE.rotation.x=-.08-bal*.8; cv.bD.rotation.x=-.08+bal*.8;
+  const cv=M.corpoV, vc=cv.veic, dirige=!!vc && andando && !naBarca, moto=vc && vc.userData.tipo==='moto';
+  M.vincent.visible=!tunel && !naBarca && !(dirige && !moto); M.anel.visible=!tunel;
+  st.fase=(st.fase||0)+(andando&&!naBarca&&!dirige?dt*11:0);
+  // na moto ele vai sentado no banco; de carro some dentro dele
+  const ySela= dirige&&moto ? vc.userData.assento.y*1.15-.575 : 0;
+  M.vincent.position.set(st.pos.x+.5,yV+ySela+(andando&&!naBarca&&!dirige?Math.abs(Math.sin(st.fase))*.05:0),st.pos.z+.5);
+  const bal=andando&&!naBarca&&!dirige?Math.sin(st.fase)*.6:0;
+  cv.pE.rotation.x= dirige ? -1.35 : bal; cv.pD.rotation.x= dirige ? -1.35 : -bal; cv.quadril.position.y= dirige ? .5 : .9;
+  cv.bE.rotation.x= dirige ? -1.1 : -.08-bal*.8; cv.bD.rotation.x= dirige ? -1.1 : -.08+bal*.8;
+  if(vc){ vc.visible=!tunel && !naBarca;
+    if(dirige){ vc.position.set(st.pos.x+.5,yV,st.pos.z+.5); vc.rotation.y=M.vincent.rotation.y; if(moto){ const a=vc.userData.assento.z*1.15; M.vincent.position.x+=Math.sin(vc.rotation.y)*a; M.vincent.position.z+=Math.cos(vc.rotation.y)*a; } }
+    else { vc.position.set(st.pos.x+.5+(moto?1:1.6),yV,st.pos.z+.5+.4); vc.rotation.y=Math.PI*.5; } }
   M.anel.position.set(st.pos.x+.5,yV+.02,st.pos.z+.5); M.anel.material.opacity=.45+.35*Math.sin(t*3)**2;
   M.luzTornoz.position.set(st.pos.x+.6,yV+.12,st.pos.z+.5);
   tornozeleira(t,tunel||naBarca);
@@ -15835,16 +15869,26 @@ function trama(tipo){ if(_trama[tipo]) return _trama[tipo];
     else if(tipo==='jeans'){ for(let k=-64;k<64;k+=3){ g.strokeStyle=`rgba(255,255,255,${.18+rnd()*.12})`; g.lineWidth=1; g.beginPath(); g.moveTo(k,64); g.lineTo(k+64,0); g.stroke(); } }
     else if(tipo==='malha'){ for(let x=0;x<64;x+=4){ g.fillStyle='rgba(0,0,0,.12)'; g.fillRect(x,0,1.5,64); } }
     else if(tipo==='couro'){ for(let k=0;k<26;k++){ g.strokeStyle=`rgba(0,0,0,${.08+rnd()*.1})`; g.beginPath(); const x=rnd()*64, y=rnd()*64; g.moveTo(x,y); g.quadraticCurveTo(x+rnd()*20,y+rnd()*10,x+rnd()*30,y+rnd()*6); g.stroke(); } }
+    else if(tipo==='xadrez'){ g.fillStyle='rgba(0,0,0,.08)'; g.fillRect(0,0,64,64); g.fillStyle='rgba(255,255,255,.32)'; for(let k=0;k<64;k+=16){ g.fillRect(k,0,1,64); g.fillRect(0,k,64,1); } g.fillStyle='rgba(200,140,60,.4)'; for(let k=8;k<64;k+=32){ g.fillRect(k,0,1,64); g.fillRect(0,k,64,1); } }
+    else if(tipo==='gabardine'){ for(let k=-64;k<64;k+=2){ g.strokeStyle=`rgba(0,0,0,${.05+rnd()*.05})`; g.beginPath(); g.moveTo(k,0); g.lineTo(k+64,64); g.stroke(); } }
+    else if(tipo==='veludo'){ const gr=g.createRadialGradient(32,32,4,32,32,46); gr.addColorStop(0,'#fff'); gr.addColorStop(1,'#bdbdbd'); g.fillStyle=gr; g.fillRect(0,0,64,64); for(let k=0;k<300;k++){ g.fillStyle=`rgba(0,0,0,${rnd()*.06})`; g.fillRect(rnd()*64,rnd()*64,1,1); } }
+    else if(tipo==='tartan'){ g.fillStyle='#fff'; g.fillRect(0,0,64,64); g.fillStyle='rgba(20,90,40,.55)'; for(let k=0;k<64;k+=16){ g.fillRect(k,0,6,64); g.fillRect(0,k,64,6); } g.fillStyle='rgba(255,230,120,.7)'; for(let k=10;k<64;k+=16){ g.fillRect(k,0,1,64); g.fillRect(0,k,64,1); } }
+    else if(tipo==='pintado'){ const cs=['#e04a2a','#2a6ab8','#e8c23c','#3a9a5a','#9a3a9a']; for(let k=0;k<40;k++){ g.fillStyle=cs[k%5]; g.globalAlpha=.7; g.beginPath(); g.ellipse(rnd()*64,rnd()*64,3+rnd()*8,2+rnd()*5,rnd()*3,0,Math.PI*2); g.fill(); } g.globalAlpha=1; }
+    else if(tipo==='modernista'){ const cs=['#d8572a','#2a4a8a','#e8c23c','#1a1a1a']; for(let k=0;k<8;k++){ g.fillStyle=cs[k%4]; g.beginPath(); g.moveTo(rnd()*64,rnd()*64); g.lineTo(rnd()*64,rnd()*64); g.lineTo(rnd()*64,rnd()*64); g.fill(); } }
     else for(let k=0;k<220;k++){ g.fillStyle=`rgba(0,0,0,${rnd()*.07})`; g.fillRect(rnd()*64,rnd()*64,2,2); } },[1,1]);
   t.wrapS=t.wrapT=THREE.RepeatWrapping; return _trama[tipo]=t; }
-const TECIDO={ liso:{r:.82}, tweed:{r:.95}, risca:{r:.7}, linho:{r:.92}, jeans:{r:.88}, malha:{r:.95}, couro:{r:.42,couro:true}, seda:{r:.28}, pele:{r:.62}, brilho:{r:.22,couro:true} };
+const TECIDO={ liso:{r:.82}, tweed:{r:.95}, risca:{r:.7}, linho:{r:.92}, jeans:{r:.88}, malha:{r:.95}, couro:{r:.42,couro:true}, seda:{r:.28}, pele:{r:.62}, brilho:{r:.22,couro:true},
+  xadrez:{r:.8}, gabardine:{r:.78}, veludo:{r:.6}, tartan:{r:.95}, pintado:{r:.9}, modernista:{r:.5} };
 function pano(cor,tipo){ tipo=tipo||'liso'; const k=cor+'|'+tipo; if(_mat[k]) return _mat[k]; const f=TECIDO[tipo]||TECIDO.liso;
   const o={color:cor,roughness:f.r,metalness:0}; if(tipo!=='pele'&&tipo!=='brilho'&&tipo!=='seda') o.map=trama(tipo);
   return _mat[k]= f.couro ? new THREE.MeshPhysicalMaterial(Object.assign(o,{clearcoat:.55,clearcoatRoughness:.35})) : new THREE.MeshStandardMaterial(o); }
+const cromoZ=()=>pano(0xc8c8c8,'brilho');
 function peca(g,w,h,d,r,material,x,y,z){ const m=new THREE.Mesh(rbox(w,h,d,r),material); m.position.set(x||0,y||0,z||0); m.castShadow=true; m.receiveShadow=true; g.add(m); return m; }
 function tubo(g,rt,rb,h,material,x,y,z){ const k='t'+rt+'|'+rb+'|'+h; const geo=_geo[k]||(_geo[k]=new THREE.CylinderGeometry(rt,rb,h,12)); const m=new THREE.Mesh(geo,material); m.position.set(x||0,y||0,z||0); m.castShadow=true; g.add(m); return m; }
 
-/* O guarda-roupa do Vincent: o que ele veste vale nas cenas, nas ruas do mapa e nas maquetes. */
+/* O guarda-roupa do Vincent: o que ele veste vale nas cenas, nas ruas do mapa e nas maquetes.
+   Cada peça é do armário (já vem com ele), da loja (preco, pago com o caixa do jogo)
+   ou exclusiva (conquista: só quem a conseguiu veste). */
 const ROUPAS={
   sobretudo:{nome:'Sobretudo e chapéu', camisa:0xd8d0c0, casaco:0x2b2622, tecido:'tweed', longo:true, calca:0x1b1d22, sapato:0x1a1512, chapeu:'fedora', corChapeu:0x1a1714},
   terno:    {nome:'Terno risca de giz', camisa:0xe8e6e0, casaco:0x2a2e38, tecido:'risca', calca:0x2a2e38, tecCalca:'risca', gravata:0x7a1e22, sapato:0x140f0c},
@@ -15853,19 +15897,84 @@ const ROUPAS={
   mangas:   {nome:'Camisa de mangas arregaçadas', camisa:0x8ab0d0, tecCamisa:'linho', mangas:true, calca:0x3a3428, sapato:0x4a3020, suspensorio:0x3a2418},
   smoking:  {nome:'Smoking', camisa:0xf8f8f4, casaco:0x101014, tecido:'liso', lapela:'seda', gravata:0x0a0a0c, borboleta:true, calca:0x101014, sapato:0x0a0a0a},
   macacao:  {nome:'Macacão de manutenção', macacao:true, camisa:0x4a6a86, tecCamisa:'malha', calca:0x4a6a86, tecCalca:'malha', sapato:0x2a2a2a, chapeu:'bone', corChapeu:0x2a3a4a},
-  moletom:  {nome:'Moletom com capuz', camiseta:true, camisa:0xd8d4cc, casaco:0x4a4e56, tecido:'malha', curto:true, capuz:true, calca:0x23262c, tecCalca:'jeans', sapato:0xe8e6e0}
+  moletom:  {nome:'Moletom com capuz', camiseta:true, camisa:0xd8d4cc, casaco:0x4a4e56, tecido:'malha', curto:true, capuz:true, calca:0x23262c, tecCalca:'jeans', sapato:0xe8e6e0},
+  // loja
+  alfaiataria:{nome:'Alfaiataria italiana', preco:4800, desc:'Azul-marinho em xadrez príncipe de gales, colete e gravata de seda cor de mel.', camisa:0xf2f0ea, casaco:0x1e2a44, tecido:'xadrez', calca:0x1e2a44, tecCalca:'xadrez', colete:0x1e2a44, gravata:0x9a6a22, sapato:0x3a1e10},
+  trench:   {nome:'Trench coat de gabardine', preco:3200, desc:'O casaco de detetive: bege, longo, cinto amarrado e chapéu marrom.', camisa:0xe8e2d2, casaco:0xb8a074, tecido:'gabardine', longo:true, cintoCasaco:true, calca:0x3a3028, sapato:0x3a2414, chapeu:'fedora', corChapeu:0x5a3a22, gravata:0x2a3a2a},
+  veludo:   {nome:'Paletó de veludo bordô', preco:2600, desc:'Coisa de marchand: veludo vinho sobre gola alta preta.', camiseta:true, golaAlta:true, camisa:0x121214, casaco:0x5a1622, tecido:'veludo', calca:0x121214, sapato:0x101010},
+  guayabera:{nome:'Guayabera de linho', preco:900, desc:'Branca, com pregas, para o verão do Rio.', camisa:0xf4f2ea, tecCamisa:'linho', pregas:true, mangas:true, calca:0xcbb894, tecCalca:'linho', sapato:0x8a5a32},
+  golaAlta: {nome:'Gola alta e blazer', preco:2200, desc:'Gola alta grafite sob blazer de tweed cinza.', camiseta:true, golaAlta:true, camisa:0x2a2c30, casaco:0x6a6a66, tecido:'tweed', calca:0x2a2c30, sapato:0x1a1512},
+  motociclista:{nome:'Jaqueta de motociclista', preco:3500, desc:'Couro preto com zíper na diagonal e botas.', camiseta:true, camisa:0xe8e6e0, casaco:0x111111, tecido:'couro', curto:true, ziper:true, calca:0x1a1a1e, tecCalca:'jeans', botas:true, sapato:0x111111},
+  // exclusivos
+  casaca:   {nome:'Casaca do Salão dos Espelhos', conquista:'cap6Concluido', desc:'Fraque de cauda, colete e gravata-borboleta brancos.', camisa:0xf8f8f4, casaco:0x0c0c10, tecido:'liso', lapela:'seda', cauda:true, colete:0xf4f2ec, gravata:0xf8f8f4, borboleta:true, calca:0x0c0c10, sapato:0x0a0a0a},
+  smokingBranco:{nome:'Smoking branco do Larápio', conquista:'fantasmaSemRastro', desc:'Paletó marfim, lapela de seda e uma rosa vermelha.', camisa:0xf8f8f4, casaco:0xefe8d8, tecido:'liso', lapela:'seda', gravata:0x0a0a0c, borboleta:true, calca:0x111114, sapato:0x0a0a0a, flor:true},
+  sombra:   {nome:'Sobretudo Sombra', conquista:'planoSombra', desc:'Preto da gola ao sapato, chapéu preto. Ninguém lembra de ter visto.', camisa:0x1a1a1e, casaco:0x0a0a0c, tecido:'tweed', longo:true, calca:0x0a0a0c, gravata:0x0a0a0c, sapato:0x050505, chapeu:'fedora', corChapeu:0x050505},
+  linhoBranco:{nome:'Terno de linho branco', conquista:'integridadeMaxima', desc:'Consciência limpa: linho branco e panamá.', camisa:0xf8f6f0, casaco:0xf2efe6, tecido:'linho', calca:0xf2efe6, tecCalca:'linho', gravata:0x5a7a9a, sapato:0x8a5a32, chapeu:'panama', corChapeu:0xf2ead2},
+  capaChuva:{nome:'Capa de chuva cinza', conquista:'calorBaixo', desc:'Sob o radar: capa impermeável, boné e nenhuma atenção.', camisa:0x3a3e44, casaco:0x6a7078, tecido:'gabardine', longo:true, cintoCasaco:true, calca:0x2a2e34, sapato:0x1a1a1a, chapeu:'bone', corChapeu:0x3a3e44},
+  tatico:   {nome:'Colete tático da PF', conquista:'operacaoTripla', desc:'Três operações sem improviso: o colete de quem planeja.', camiseta:true, camisa:0x1a1c1e, tatico:true, calca:0x2a2e26, botas:true, sapato:0x15130f}
 };
 const CABELOS={curto:'Curto', penteado:'Penteado para trás', raspado:'Raspado', cacheado:'Cacheado', rabo:'Rabo de cavalo'};
 const CORES_CABELO={castanho:['Castanho escuro',0x2a1e16], preto:['Preto',0x111111], grisalho:['Grisalho',0x8a8780], aloirado:['Castanho claro',0x7a5a3a]};
 const BARBAS={nenhuma:'Sem barba', porFazer:'Por fazer', cheia:'Barba cheia', bigode:'Bigode', cavanhaque:'Cavanhaque'};
-const CHAPEUS={auto:'Como a roupa pede', nenhum:'Sem chapéu', fedora:'Fedora', panama:'Panamá', boina:'Boina'};
-const FIGURINO_PADRAO={roupa:'sobretudo', cabelo:'curto', corCabelo:'castanho', barba:'nenhuma', chapeu:'auto'};
-const figurinoAtual=()=>Object.assign({},FIGURINO_PADRAO,(S&&S.figurino)||{});
+const CHAPEUS={auto:'Como a roupa pede', nenhum:'Sem chapéu', fedora:'Fedora', panama:'Panamá', boina:'Boina',
+  coco:{nome:'Chapéu-coco', preco:800, desc:'Feltro preto, copa redonda.'},
+  boinaPintor:{nome:'Boina vermelha de pintor', conquista:'anyaLivre', desc:'Presente de quem saiu livre.'}};
+const ACESSORIOS={
+  rosto:{titulo:'Rosto', itens:{
+    aviador:{nome:'Óculos aviador', preco:600, desc:'Lentes escuras, aro dourado.'},
+    redondos:{nome:'Óculos redondos', preco:350, desc:'Aro de tartaruga, para ler procedência.'},
+    monoculo:{nome:'Monóculo de joalheiro', conquista:'periciaCincoSeguidas', desc:'Cinco laudos perfeitos seguidos.'},
+    nariz:{nome:'Nariz de palhaço', conquista:'aprendendoComOsErros', desc:'Ninguém nasce sabendo forjar arte.'} }},
+  pescoco:{titulo:'Pescoço', itens:{
+    cachecol:{nome:'Cachecol xadrez', preco:450, desc:'Lã escocesa vermelha e verde.'},
+    ascot:{nome:'Lenço de seda (ascot)', preco:700, desc:'Seda estampada no colarinho aberto.'},
+    corrente:{nome:'Corrente de ouro', preco:2500, desc:'Grossa, para o submundo ver.'},
+    cachecolAnya:{nome:'Cachecol pintado por Anya', conquista:'alianciaAnya', desc:'Pintado à mão: vocês dois contra o resto.'} }},
+  pulso:{titulo:'Pulso', itens:{
+    relogioAco:{nome:'Relógio de aço', preco:1200, desc:'Mostrador preto, pulseira de metal.'},
+    relogioOuro:{nome:'Relógio suíço de ouro', preco:6500, desc:'Ouro amarelo e couro de crocodilo.'},
+    relogioBolso:{nome:'Relógio de bolso com corrente', conquista:'fortunaAcumulada', desc:'Para quem guardou mais de R$ 50 mil.'} }},
+  mao:{titulo:'Mãos', itens:{
+    luvas:{nome:'Luvas de couro', preco:500, desc:'Pretas, finas, sem digitais.'},
+    pasta:{nome:'Pasta de couro', preco:900, desc:'Para levar laudo, ou o que couber.'},
+    bengala:{nome:'Bengala de castão dourado', preco:1800, desc:'Ébano e latão.'},
+    luvasAlgodao:{nome:'Luvas de algodão do restaurador', conquista:'falsarioTriplo', desc:'Três peças limpas seguidas.'},
+    anel:{nome:'Anel de sinete', conquista:'redeExtensa', desc:'Todo mundo que precisa saber, sabe o seu nome.'} }},
+  lapela:{titulo:'Lapela', itens:{
+    flor:{nome:'Cravo na lapela', preco:80, desc:'Vermelho, trocado todo dia.'},
+    lenco:{nome:'Lenço Di Cavalcanti', conquista:'cap1Concluido', desc:'Estampa modernista, lembrança da primeira tela.'},
+    caneta:{nome:'Caneta-tinteiro da Helena', conquista:'vinculoHelena', desc:'A delegada que te recrutou nunca se arrependeu.'},
+    distintivo:{nome:'Distintivo de consultor da PF', conquista:'dossieIntegro', desc:'Entregou o dossiê sem tirar uma linha.'} }}
+};
+const VEICULOS={
+  lambreta:{nome:'Lambreta 1962', preco:7500, tipo:'moto', desc:'Scooter creme e verde-água. Anda pelo mapa bem mais rápido.'},
+  cafeRacer:{nome:'Moto café racer', preco:14000, tipo:'moto', desc:'Tanque vermelho, guidão baixo.'},
+  fusca:{nome:'Fusca 1969', preco:12000, tipo:'carro', desc:'Azul-calcinha, motor atrás.'},
+  opala:{nome:'Opala 1975', preco:22000, tipo:'carro', desc:'Sedã preto de seis cilindros.'},
+  esportivo:{nome:'Esportivo conversível', preco:60000, tipo:'carro', desc:'Vermelho, baixo, conversível. Para quem tem caixa.'},
+  jipe:{nome:'Jipe da Serra', conquista:'fugaSulDeMinas', tipo:'carro', desc:'Verde-oliva, estepe atrás: a estrada para o Sul de Minas.'},
+  motoPreta:{nome:'Moto preta sem placa', conquista:'loboSolitario', tipo:'moto', desc:'Para quem derrubou os três lados no mesmo dia.'}
+};
+const FIGURINO_PADRAO={roupa:'sobretudo', cabelo:'curto', corCabelo:'castanho', barba:'nenhuma', chapeu:'auto', rosto:'nenhum', pescoco:'nenhum', pulso:'nenhum', mao:'nenhum', lapela:'nenhum', veiculo:'nenhum'};
+const SLOTS_ACESS=Object.keys(ACESSORIOS);
+// a peça de cada escolha (para preço, conquista e posse)
+function itemDe(k,v){ if(v==='nenhum'||v==='auto') return null;
+  if(k==='roupa') return ROUPAS[v]; if(k==='chapeu') return typeof CHAPEUS[v]==='object'?CHAPEUS[v]:null; if(k==='veiculo') return VEICULOS[v];
+  if(ACESSORIOS[k]) return ACESSORIOS[k].itens[v]; return null; }
+const temConquista=id=>Array.isArray(S&&S.conquistas) && S.conquistas.includes(id);
+function possui(k,v){ const it=itemDe(k,v); if(!it) return true; if(it.conquista) return temConquista(it.conquista); if(it.preco) return ((S&&S.armario)||[]).includes(k+':'+v); return true; }
+// o que estiver salvo e não for (mais) dele volta ao padrão
+const figurinoAtual=()=>{ const f=Object.assign({},FIGURINO_PADRAO,(S&&S.figurino)||{}); for(const k in f) if(!possui(k,f[k])) f[k]=FIGURINO_PADRAO[k]; return f; };
 function lookVincent(f){ f=f||figurinoAtual(); const r=ROUPAS[f.roupa]||ROUPAS.sobretudo;
   const ch= f.chapeu==='auto' ? (r.chapeu||null) : f.chapeu==='nenhum' ? null : f.chapeu;
+  const acess={}; SLOTS_ACESS.forEach(k=>{ if(f[k] && f[k]!=='nenhum') acess[k]=f[k]; });
   return Object.assign({pele:0xc69c78, cabelo:(CORES_CABELO[f.corCabelo]||CORES_CABELO.castanho)[1], est:f.cabelo, tornozeleira:true}, r,
-    {chapeu:ch, corChapeu: ch===r.chapeu ? r.corChapeu : ch==='panama'?0xe8dcb8 : ch==='boina'?0x2a2a30 : 0x1a1714,
-     barba: f.barba==='cheia'||f.barba==='cavanhaque' ? 1 : f.barba==='porFazer' ? 2 : null, bigode: f.barba==='bigode'||f.barba==='cavanhaque', estBarba:f.barba}); }
+    {chapeu:ch, corChapeu: ch===r.chapeu ? r.corChapeu : ch==='panama'?0xe8dcb8 : ch==='boina'?0x2a2a30 : ch==='boinaPintor'?0xb02a1a : 0x1a1714,
+     barba: f.barba==='cheia'||f.barba==='cavanhaque' ? 1 : f.barba==='porFazer' ? 2 : null, bigode: f.barba==='bigode'||f.barba==='cavanhaque', estBarba:f.barba, acess}); }
+// recompensa exclusiva de cada conquista (para o painel de conquistas)
+function recompensaDe(conq){ const achar=(lista)=>{ for(const k in lista) if(lista[k].conquista===conq) return lista[k].nome; return null; };
+  let n=achar(ROUPAS)||achar(VEICULOS)||achar(Object.fromEntries(Object.entries(CHAPEUS).filter(([,v])=>typeof v==='object')));
+  if(!n) for(const s of SLOTS_ACESS){ n=achar(ACESSORIOS[s].itens); if(n) break; } return n; }
 
 function pessoa(id,look){
   const o=look || (id==='vice' ? lookVincent() : ELENCO[id]||ELENCO.weber);
@@ -15873,17 +15982,23 @@ function pessoa(id,look){
   const pele=pano(o.pele,'pele'), cabelo=o.cabelo!==null&&o.cabelo!==undefined ? pano(o.cabelo,'liso') : null;
   const tCasaco=o.tecido||'liso', mCamisa=pano(o.camisa,o.tecCamisa||(o.camiseta?'malha':'liso')), mCalca=pano(o.calca,o.tecCalca||'liso'), mSapato=pano(o.sapato||0x1a1512,'brilho');
   const mCasaco=o.casaco?pano(o.casaco,tCasaco):null;
+  const ac=Object.assign({},o.acess||{}); if(o.flor && !ac.lapela) ac.lapela='rosa';
+  const mMao= ac.mao==='luvas' ? pano(0x111111,'couro') : ac.mao==='luvasAlgodao' ? pano(0xf2f0ea,'malha') : pele, ouro=pano(0xd8b45a,'brilho');
   const quadril=new THREE.Group(); quadril.position.y=.9; g.add(quadril); u.quadril=quadril;
   peca(quadril,o.fem?.34:.38,.18,.23,.06,mCalca,0,-.04,0);
   const perna=(x)=>{ const p=new THREE.Group(); p.position.set(x,0,0);
     tubo(p,.088,.074,.84,mCalca,0,-.44,0);
-    peca(p,.15,.09,.29,.035,mSapato,0,-.86,.045); quadril.add(p); return p; };
+    peca(p,.15,.09,.29,.035,mSapato,0,-.86,.045); if(o.botas) peca(p,.15,.24,.19,.04,mSapato,0,-.74,0); quadril.add(p); return p; };
   u.pE=perna(-.1); u.pD=perna(.1);
   const tronco=new THREE.Group(); quadril.add(tronco); u.tronco=tronco;
   const larg=o.fem?.38:.44;
   // camisa (ou camiseta / macacão) e, por cima, o paletó, a jaqueta ou o sobretudo
   peca(tronco,larg,.62,.25,.08,mCamisa,0,.31,0);
   if(!o.camiseta && !o.macacao) peca(tronco,.2,.07,.2,.03,mCamisa,0,.62,.01);
+  if(o.golaAlta) peca(tronco,.19,.13,.19,.05,mCamisa,0,.66,0);
+  if(o.pregas) for(const x of [-.13,-.08,.08,.13]) peca(tronco,.018,.5,.012,.005,pano(0xffffff,'linho'),x,.3,.128);
+  if(o.tatico){ const mt=pano(0x2a2e26,'malha'); peca(tronco,larg+.05,.44,.31,.07,mt,0,.36,0); for(const x of [-.12,0,.12]) peca(tronco,.1,.12,.04,.015,mt,x,.24,.16);
+    peca(tronco,.12,.06,.012,.005,pano(0xe0c040,'liso'),-.1,.5,.158); }
   if(o.macacao){ peca(tronco,larg+.01,.2,.26,.06,mCalca,0,.08,0); peca(tronco,.14,.12,.02,.01,pano(0x3a5a76,'malha'),-.1,.42,.13); }
   if(o.suspensorio){ const m=pano(o.suspensorio,'couro'); for(const s of [-1,1]) peca(tronco,.035,.6,.02,.008,m,s*.11,.32,.13); }
   if(!o.casaco && !o.macacao && !o.fem){ for(let k=0;k<4;k++) peca(tronco,.022,.022,.012,.01,pano(0xe8e4dc,'brilho'),0,.52-k*.13,.128); }
@@ -15891,15 +16006,19 @@ function pessoa(id,look){
     const comp= o.longo?.74 : o.curto?.56 : .64, yC= o.longo?.26 : o.curto?.33 : .3;
     peca(tronco,larg+.05,comp,.29,.09,mCasaco,0,yC,0);
     if(o.longo){ const saia=peca(quadril,larg+.07,.52,.3,.08,mCasaco,0,-.26,0); u.saia=saia; }
+    if(o.cauda) for(const s of [-1,1]) peca(quadril,.2,.62,.04,.015,mCasaco,s*.1,-.3,-.14);
+    if(o.cintoCasaco){ peca(tronco,larg+.08,.05,.31,.02,mCasaco,0,.13,0); peca(tronco,.07,.055,.02,.01,pano(0x3a2a1a,'couro'),0,.13,.16); }
     if(!o.capuz){
       // a frente aberta em V: camisa e gravata aparecem; lapelas por cima
       const v=new THREE.Shape(); v.moveTo(-.1,.3); v.lineTo(.1,.3); v.lineTo(0,o.curto?.04:-.02); v.lineTo(-.1,.3);
       const vm=new THREE.Mesh(new THREE.ShapeGeometry(v),o.camiseta?mCamisa:pano(o.camisa,'liso')); vm.position.set(0,.33,.148); tronco.add(vm);
+      if(o.colete){ peca(tronco,.18,.26,.02,.01,pano(o.colete,o.colete===o.casaco?tCasaco:'seda'),0,.25,.15); for(let k=0;k<3;k++) peca(tronco,.018,.018,.012,.009,ouro,0,.33-k*.07,.162); }
       const mLap= o.lapela==='seda' ? pano(o.casaco,'seda') : pano(o.casaco,tCasaco);
       for(const s of [-1,1]){ const l=peca(tronco,.07,.34,.02,.008,mLap,s*.075,.47,.152); l.rotation.z=s*.32; }
       if(!o.curto) for(let k=0;k<2;k++) peca(tronco,.026,.026,.015,.012,pano(0x1a1410,'brilho'),.0,.2-k*.12,.15);
       if(!o.curto && !o.camiseta){ for(const s of [-1,1]) peca(tronco,.12,.025,.02,.008,mLap,s*.14,.14,.149); }
-      if(o.tecido==='couro'){ peca(tronco,.012,.4,.01,.004,pano(0xb0b0b0,'brilho'),.05,.3,.152); }
+      if(o.ziper){ const z=peca(tronco,.014,.46,.01,.005,cromoZ(),.05,.3,.153); z.rotation.z=.22; }
+      else if(o.tecido==='couro'){ peca(tronco,.012,.4,.01,.004,pano(0xb0b0b0,'brilho'),.05,.3,.152); }
     } else { peca(tronco,.3,.14,.18,.06,mCasaco,0,.68,-.08); for(const s of [-1,1]) peca(tronco,.01,.14,.01,.004,pano(0xe8e6e0,'liso'),s*.04,.5,.15);
       peca(tronco,.22,.1,.02,.02,mCasaco,0,.14,.15); }
   } else if(o.avental){ peca(tronco,.4,.55,.02,.01,pano(o.avental,'liso'),0,.2,.14); }
@@ -15913,7 +16032,7 @@ function pessoa(id,look){
   const braco=(x)=>{ const b=new THREE.Group(); b.position.set(x,.56,0);
     if(o.mangas||o.camiseta&&!mCasaco){ tubo(b,.068,.06,.32,mManga,0,-.16,0); tubo(b,.05,.045,.28,pele,0,-.45,0); }
     else { tubo(b,.07,.06,.58,mManga,0,-.29,0); if(!o.camiseta&&!o.macacao) tubo(b,.052,.052,.04,mCamisa,0,-.59,0); }
-    peca(b,.08,.1,.07,.03,pele,0,-.65,0); tronco.add(b); return b; };
+    peca(b,.08,.1,.07,.03,mMao,0,-.65,0); tronco.add(b); return b; };
   u.bE=braco(-(larg/2+.06)); u.bD=braco(larg/2+.06);
   // pescoço e cabeça: nariz, orelhas, sobrancelhas, olhos
   tubo(tronco,.055,.06,.1,pele,0,.68,0);
@@ -15951,8 +16070,30 @@ function pessoa(id,look){
       const copa=new THREE.Mesh(new THREE.CylinderGeometry(.14,.17,.17,20),m); copa.position.y=.265; copa.castShadow=true; cab.add(copa);
       const vinco=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,.22),pano(cc,'liso')); vinco.position.y=.35; cab.add(vinco);
       const fita=new THREE.Mesh(new THREE.CylinderGeometry(.168,.172,.04,20),pano(tipoChapeu==='panama'?0x1a1a1a:0x3a2a1e,'seda')); fita.position.y=.205; cab.add(fita); }
-    else if(tipoChapeu==='boina'){ const b=new THREE.Mesh(new THREE.SphereGeometry(.19,16,8),pano(cc,'malha')); b.scale.set(1,.38,1); b.position.set(0,.17,-.01); b.rotation.z=.12; cab.add(b); }
+    else if(tipoChapeu==='coco'){ const m=pano(cc,'liso'); const d=new THREE.Mesh(new THREE.SphereGeometry(.16,18,10,0,Math.PI*2,0,Math.PI/2),m); d.position.y=.16; d.scale.y=1.05; d.castShadow=true; cab.add(d);
+      const aba=new THREE.Mesh(new THREE.CylinderGeometry(.21,.22,.02,22),m); aba.position.y=.165; cab.add(aba); const fita=new THREE.Mesh(new THREE.CylinderGeometry(.161,.163,.035,20),pano(0x111111,'seda')); fita.position.y=.185; cab.add(fita); }
+    else if(tipoChapeu==='boina'||tipoChapeu==='boinaPintor'){ const b=new THREE.Mesh(new THREE.SphereGeometry(.19,16,8),pano(cc,'malha')); b.scale.set(1,.38,1); b.position.set(0,.17,-.01); b.rotation.z=.12; cab.add(b); }
     else if(tipoChapeu==='bone'){ const m=pano(cc,'malha'); const c=new THREE.Mesh(new THREE.SphereGeometry(.15,16,8,0,Math.PI*2,0,Math.PI/2),m); c.position.y=.12; c.scale.set(1,.8,1.05); cab.add(c); peca(cab,.2,.015,.14,.006,m,0,.13,.17); } }
+  // acessórios
+  const zL= mCasaco&&!o.capuz ? .157 : .132;
+  if(ac.rosto==='aviador'){ const l=pano(0x1a2630,'brilho'); for(const s of [-1,1]) peca(cab,.085,.065,.012,.022,l,s*.058,.03,.143); peca(cab,.05,.008,.008,.003,ouro,0,.058,.143); for(const s of [-1,1]) peca(cab,.008,.008,.13,.003,ouro,s*.13,.045,.08); }
+  if(ac.rosto==='redondos'){ const ar=pano(0x5a3a1e,'brilho'); for(const s of [-1,1]){ const l=new THREE.Mesh(new THREE.TorusGeometry(.042,.008,6,16),ar); l.position.set(s*.058,.035,.143); cab.add(l); } peca(cab,.035,.008,.008,.003,ar,0,.04,.143); for(const s of [-1,1]) peca(cab,.008,.008,.13,.003,ar,s*.13,.04,.08); }
+  if(ac.rosto==='monoculo'){ const l=new THREE.Mesh(new THREE.TorusGeometry(.045,.01,6,18),ouro); l.position.set(.058,.035,.145); cab.add(l); const vd=new THREE.Mesh(new THREE.CircleGeometry(.04,16),new THREE.MeshStandardMaterial({color:0xcfe8f4,transparent:true,opacity:.35,roughness:.05})); vd.position.set(.058,.035,.146); cab.add(vd); peca(tronco,.006,.3,.006,.002,ouro,.07,.75,.14); }
+  if(ac.rosto==='nariz'){ const n=new THREE.Mesh(new THREE.SphereGeometry(.045,14,10),pano(0xd81e1e,'brilho')); n.position.set(0,-.01,.165); cab.add(n); }
+  if(ac.pescoco==='cachecol'||ac.pescoco==='cachecolAnya'){ const m=pano(ac.pescoco==='cachecol'?0xa82a22:0xffffff, ac.pescoco==='cachecol'?'tartan':'pintado');
+    peca(tronco,.27,.09,.25,.04,m,0,.64,0); const p1=peca(tronco,.08,.4,.03,.015,m,-.07,.42,zL+.01); p1.rotation.z=.08; const p2=peca(tronco,.08,.32,.03,.015,m,.02,.45,zL+.02); p2.rotation.z=-.1; }
+  if(ac.pescoco==='ascot'){ const m=pano(0x6a2a5a,'seda'); peca(tronco,.1,.13,.03,.02,m,0,.55,.15); peca(tronco,.05,.04,.03,.012,m,0,.61,.15); }
+  if(ac.pescoco==='corrente'){ const c=new THREE.Mesh(new THREE.TorusGeometry(.11,.013,6,26),ouro); c.position.set(0,.57,.07); c.rotation.x=1.15; tronco.add(c); }
+  if(ac.pulso==='relogioAco'||ac.pulso==='relogioOuro'){ const pul= ac.pulso==='relogioOuro' ? pano(0x3a2412,'couro') : pano(0xb8b8b8,'brilho');
+    peca(u.bE,.09,.035,.09,.012,pul,0,-.565,0); const m=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.012,16),ac.pulso==='relogioOuro'?ouro:pano(0xd8d8d8,'brilho')); m.rotation.z=Math.PI/2; m.position.set(-.05,-.565,0); u.bE.add(m); }
+  if(ac.pulso==='relogioBolso'){ const c=peca(tronco,.16,.008,.008,.003,ouro,.06,.2,zL); c.rotation.z=-.25; const f=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.01,14),ouro); f.rotation.x=Math.PI/2; f.position.set(.14,.17,zL); tronco.add(f); }
+  if(ac.mao==='pasta'){ peca(u.bD,.34,.26,.09,.025,pano(0x4a2a18,'couro'),0,-.86,0); peca(u.bD,.1,.035,.03,.01,ouro,0,-.72,0); }
+  if(ac.mao==='bengala'){ tubo(u.bD,.016,.016,.86,pano(0x140e0a,'brilho'),0,-1.07,.06); const k=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),ouro); k.position.set(0,-.64,.06); u.bD.add(k); }
+  if(ac.mao==='anel'){ const a=new THREE.Mesh(new THREE.TorusGeometry(.03,.009,6,14),ouro); a.rotation.y=Math.PI/2; a.position.set(.01,-.68,.02); u.bE.add(a); }
+  if(ac.lapela==='flor'||ac.lapela==='rosa'){ const f=pano(0xc81e2a,'malha'); for(let k=0;k<5;k++){ const pt=new THREE.Mesh(new THREE.SphereGeometry(.022,8,6),f); pt.position.set(-.14+Math.cos(k*1.26)*.015,.47+Math.sin(k*1.26)*.015,zL+.012); tronco.add(pt); } peca(tronco,.008,.07,.008,.003,pano(0x2a6a2a,'liso'),-.14,.42,zL); }
+  if(ac.lapela==='lenco'){ const l=peca(tronco,.075,.05,.012,.004,pano(0xffffff,'modernista'),-.135,.41,zL); l.rotation.z=.15; }
+  if(ac.lapela==='caneta'){ peca(tronco,.014,.09,.014,.006,pano(0x111111,'brilho'),-.15,.42,zL); peca(tronco,.006,.05,.004,.002,ouro,-.15,.44,zL+.01); }
+  if(ac.lapela==='distintivo'){ const d=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.012,5),ouro); d.rotation.x=Math.PI/2; d.position.set(-.14,.46,zL+.004); tronco.add(d); peca(tronco,.03,.012,.004,.002,pano(0x1f3a6a,'liso'),-.14,.46,zL+.012); }
   // cinto e tornozeleira
   if(!o.longo && !o.macacao && !o.fem){ peca(quadril,.39,.04,.24,.012,pano(0x1a1410,'couro'),0,.03,0); peca(quadril,.04,.035,.02,.006,pano(0xc9a24a,'brilho'),0,.03,.123); }
   if(o.tornozeleira){ const t=peca(u.pD,.19,.065,.21,.025,pano(0x222222,'brilho'),0,-.76,0); u.tornoz=t;
@@ -15961,8 +16102,37 @@ function pessoa(id,look){
   g.userData=u;
   return g;
 }
-window.figurino={ROUPAS,CABELOS,CORES_CABELO,BARBAS,CHAPEUS,PADRAO:FIGURINO_PADRAO,atual:figurinoAtual,versao:0,
-  pessoa:(id,look)=>pessoa(id,look), look:lookVincent};
+/* Veículos da garagem: em escala de gente (o carro tem uns 4 m). userData.assento = onde senta quem pilota a moto. */
+function veiculo(id){ const v=VEICULOS[id]; if(!v) return null; const g=new THREE.Group(); g.userData={tipo:v.tipo};
+  const pneu=pano(0x141414,'malha'), cromo=pano(0xc8c8c8,'brilho'), vidro=pano(0x1a2630,'brilho');
+  const roda=(x,z,r,l)=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(r,r,l,18),pneu); w.rotation.z=Math.PI/2; w.position.set(x,r,z); w.castShadow=true; g.add(w);
+    const c=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,l+.01,14),cromo); c.rotation.z=Math.PI/2; c.position.set(x,r,z); g.add(c); };
+  const farol=(x,y,z,c,e)=>{ const l=new THREE.Mesh(new THREE.SphereGeometry(e||.07,10,8),new THREE.MeshBasicMaterial({color:c})); l.position.set(x,y,z); g.add(l); return l; };
+  const bolha=(sx,sy,sz,mat,x,y,z)=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),mat); m.scale.set(sx,sy,sz); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
+  if(v.tipo==='carro'){
+    if(id==='fusca'){ const lata=pano(0x8ab8d8,'brilho'); bolha(.82,.5,1.85,lata,0,.62,0); bolha(.66,.5,.95,vidro,0,.92,-.15); bolha(.7,.46,.9,lata,0,.9,-.15).scale.set(.72,.44,.92);
+      for(const [x,z] of [[-.7,1.1],[.7,1.1],[-.7,-1.15],[.7,-1.15]]) bolha(.22,.3,.5,lata,x,.42,z); for(const x of [-.75,.75]) for(const z of [1.15,-1.15]) roda(x,z,.3,.2);
+      for(const x of [-.45,.45]) farol(x,.62,1.72,0xfff2c0); peca(g,1.5,.08,.08,.03,cromo,0,.36,1.86); peca(g,1.5,.08,.08,.03,cromo,0,.36,-1.86); }
+    else if(id==='opala'){ const lata=pano(0x0c0c0e,'brilho'); peca(g,1.75,.55,4.3,.14,lata,0,.62,0); peca(g,1.55,.5,2.1,.12,vidro,0,1.12,-.25); peca(g,1.6,.06,2.2,.03,lata,0,1.4,-.25);
+      for(const z of [2.16,-2.16]) peca(g,1.8,.12,.1,.04,cromo,0,.45,z); for(const x of [-.8,.8]) for(const z of [1.35,-1.35]) roda(x,z,.32,.24);
+      for(const x of [-.55,.55]) farol(x,.66,2.17,0xfff2c0,.09); for(const x of [-.6,.6]) farol(x,.66,-2.17,0xff2a1a,.07); }
+    else if(id==='esportivo'){ const lata=pano(0xb81e1e,'brilho'); peca(g,1.7,.42,3.9,.16,lata,0,.48,0); bolha(.75,.3,1.1,lata,0,.6,1.2);
+      const pb=peca(g,1.4,.36,.05,.02,vidro,0,.86,.25); pb.rotation.x=-.5; for(const x of [-.38,.38]) peca(g,.5,.5,.5,.12,pano(0x3a2416,'couro'),x,.72,-.35);
+      for(const x of [-.78,.78]) for(const z of [1.25,-1.25]) roda(x,z,.32,.26); for(const x of [-.5,.5]) farol(x,.56,1.95,0xfff2c0,.08); }
+    else { const lata=pano(0x4a5a32,'malha'); peca(g,1.65,.75,3.3,.08,lata,0,.85,0); peca(g,1.5,.05,.8,.02,vidro,0,1.45,.95).rotation.x=.25;
+      for(const x of [-.72,.72]) peca(g,.06,.6,.06,.02,lata,x,1.5,.2); peca(g,1.5,.06,.06,.02,lata,0,1.8,.2); for(const x of [-.8,.8]) for(const z of [1.1,-1.1]) roda(x,z,.42,.32);
+      const est=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.24,16),pneu); est.rotation.x=Math.PI/2; est.position.set(0,1,-1.75); g.add(est); for(const x of [-.5,.5]) farol(x,.95,1.66,0xfff2c0,.1); }
+  } else {
+    const preta=id==='motoPreta', corT= id==='lambreta'?0xe8dcc0 : preta?0x0a0a0a:0xb81e1e, lata=pano(corT,'brilho');
+    if(id==='lambreta'){ const verde=pano(0x6ab8b0,'brilho'); peca(g,.5,.85,.12,.06,verde,0,.62,.62); peca(g,.36,.08,.9,.03,pano(0x2a2a2a,'malha'),0,.3,.05); bolha(.3,.3,.55,lata,0,.58,-.5);
+      peca(g,.3,.1,.55,.04,pano(0x5a3a22,'couro'),0,.9,-.4); tubo(g,.02,.02,.7,cromo,0,1.15,.66).rotation.z=Math.PI/2; for(const z of [.75,-.72]) roda(0,z,.22,.12); farol(0,1.05,.72,0xfff2c0,.08); g.userData.assento={y:.95,z:-.35}; }
+    else { peca(g,.34,.28,.62,.1,lata,0,.95,.25); peca(g,.28,.1,.72,.04,pano(0x1a1a1a,'couro'),0,.92,-.38); peca(g,.36,.36,.42,.06,pano(0x6a6a6a,'brilho'),0,.55,.05);
+      tubo(g,.03,.03,.8,cromo,0,.5,-.5).rotation.x=1.2; tubo(g,.02,.02,.66,cromo,0,1.05,.62).rotation.z=Math.PI/2; tubo(g,.025,.025,.8,cromo,0,.75,.7).rotation.x=-.35;
+      for(const z of [.78,-.75]) roda(0,z,.36,.14); farol(0,1.02,.78,0xfff2c0,.09); g.userData.assento={y:.98,z:-.32}; }
+  }
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); return g; }
+window.figurino={ROUPAS,CABELOS,CORES_CABELO,BARBAS,CHAPEUS,ACESSORIOS,VEICULOS,PADRAO:FIGURINO_PADRAO,atual:figurinoAtual,versao:0,
+  pessoa:(id,look)=>pessoa(id,look), look:lookVincent, veiculo, recompensa:recompensaDe};
 const sentar=(p,sim)=>{ const u=p.userData; u.pE.rotation.x=u.pD.rotation.x= sim?-Math.PI/2:0; u.quadril.position.y= sim?.5:.9; };
 
 /* ---------------------------- cômodo base ---------------------------- */
@@ -16690,51 +16860,93 @@ Object.assign(DIORAMAS,{
     return {sc, npc:{x:.6,z:-1.6,rot:.3}, vincent:{x:-.4,z:-.6,rot:Math.PI-.5}, sozinho:{x:.2,z:-1.4,rot:Math.PI-.3}, animar(t){ lr.material.opacity=Math.sin(t*2)>0?.9:.1; } }; }
 });
 
-/* ---------------------------- guarda-roupa ----------------------------
-   No apartamento o Vincent troca de roupa, cabelo, barba e chapéu. Não gasta
+/* ---------------------------- guarda-roupa, loja e garagem ----------------------------
+   No apartamento o Vincent troca de roupa, cabelo, barba, chapéu e acessórios, compra
+   peças e veículos com o caixa do jogo e veste os exclusivos das conquistas. Não gasta
    período; a escolha fica no jogo salvo e vale para cenas, mapa e operações. */
+const reais=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
 function abrirGuardaRoupa(){
   if(document.getElementById('guarda')) return;
-  const sel=figurinoAtual();
+  const sel=figurinoAtual(); let foco={k:'roupa',v:sel.roupa}, aba='vestir';
   const ov=document.createElement('div'); ov.id='guarda'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','Guarda-roupa do Vincent');
-  const grupo=(k,titulo,op)=>`<fieldset class="gr-g"><legend>${titulo}</legend>${Object.keys(op).map(v=>{ const x=op[v]; const nome=Array.isArray(x)?x[0]:(x.nome||x);
-    const am=Array.isArray(x)?`<i style="background:#${x[1].toString(16).padStart(6,'0')}"></i>`:''; return `<button type="button" data-k="${k}" data-v="${v}" aria-pressed="false">${am}${nome}</button>`; }).join('')}</fieldset>`;
-  ov.innerHTML=`<div class="gr-caixa"><div class="gr-topo"><b>Guarda-roupa</b><span>O que ele veste aparece nas cenas, nas ruas do mapa e nas operações.</span></div>
-    <div class="gr-corpo"><div class="gr-palco"><canvas aria-hidden="true"></canvas><p class="gr-nome"></p></div>
-    <div class="gr-opcoes">${grupo('roupa','Roupa',ROUPAS)}${grupo('cabelo','Cabelo',CABELOS)}${grupo('corCabelo','Cor do cabelo',CORES_CABELO)}${grupo('barba','Barba',BARBAS)}${grupo('chapeu','Chapéu',CHAPEUS)}</div></div>
-    <div class="gr-pe"><button type="button" class="gr-cancela">Cancelar</button><button type="button" class="gr-veste">Vestir</button></div></div>`;
+  const etiqueta=(k,v)=>{ const it=itemDe(k,v); if(!it) return '';
+    if(it.conquista) return temConquista(it.conquista) ? '<em class="gr-ex">exclusivo</em>' : '<em class="gr-trava">exclusivo 🔒</em>';
+    if(it.preco && !possui(k,v)) return `<em class="gr-preco">${reais(it.preco)}</em>`; return ''; };
+  const nomeDe=x=>Array.isArray(x)?x[0]:(x.nome||x);
+  const grupo=(k,titulo,op,ab)=>`<fieldset class="gr-g" data-aba="${ab}"><legend>${titulo}</legend>${Object.keys(op).map(v=>{ const x=op[v];
+    const am=Array.isArray(x)?`<i style="background:#${x[1].toString(16).padStart(6,'0')}"></i>`:''; return `<button type="button" data-k="${k}" data-v="${v}" aria-pressed="false">${am}<span>${nomeDe(x)}</span>${etiqueta(k,v)}</button>`; }).join('')}</fieldset>`;
+  const comNenhum=(itens,nome)=>Object.assign({nenhum:nome||'Nenhum'},itens);
+  ov.innerHTML=`<div class="gr-caixa"><div class="gr-topo"><div><b>Guarda-roupa</b><span>O que ele veste aparece nas cenas, nas ruas do mapa e nas operações.</span></div><p class="gr-caixa-v"></p></div>
+    <div class="gr-abas" role="tablist">${[['vestir','Roupa e cabelo'],['acess','Acessórios'],['garagem','Garagem']].map(([a,n])=>`<button type="button" role="tab" data-aba="${a}">${n}</button>`).join('')}</div>
+    <div class="gr-corpo"><div class="gr-palco"><canvas aria-hidden="true"></canvas><div class="gr-info" aria-live="polite"></div></div>
+    <div class="gr-opcoes">${grupo('roupa','Roupa',ROUPAS,'vestir')}${grupo('cabelo','Cabelo',CABELOS,'vestir')}${grupo('corCabelo','Cor do cabelo',CORES_CABELO,'vestir')}${grupo('barba','Barba',BARBAS,'vestir')}${grupo('chapeu','Chapéu',CHAPEUS,'vestir')}
+      ${SLOTS_ACESS.map(s=>grupo(s,ACESSORIOS[s].titulo,comNenhum(ACESSORIOS[s].itens),'acess')).join('')}
+      ${grupo('veiculo','Veículo',comNenhum(VEICULOS,'A pé'),'garagem')}<p class="gr-nota" data-aba="garagem">De carro ou de moto o Vincent atravessa o mapa bem mais rápido. A barca continua sendo o caminho para as ilhas e Niterói.</p></div></div>
+    <div class="gr-pe"><p class="gr-aviso"></p><button type="button" class="gr-cancela">Cancelar</button><button type="button" class="gr-veste">Vestir</button></div></div>`;
   document.body.appendChild(ov);
-  // prévia 3D girando num pedestal (sem WebGL, ficam só os nomes)
+  // prévia 3D: o boneco girando no pedestal e, na garagem, o veículo ao lado (sem WebGL, ficam só os nomes)
   let pr=null;
   try{ if(typeof THREE!=='undefined' && webgl()){
     const canvas=ov.querySelector('canvas'), renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.shadowMap.enabled=true;
     const sc=new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xe8dcc8,0x1a120c,.55));
-    const key=new THREE.SpotLight(0xfff0d8,1.6,12,.5,.5,1.2); key.position.set(2.2,4,3); key.target.position.set(0,1,0); key.castShadow=true; key.shadow.mapSize.set(1024,1024); sc.add(key,key.target);
+    const key=new THREE.SpotLight(0xfff0d8,1.6,16,.6,.5,1.2); key.position.set(2.2,4.4,3.4); key.target.position.set(0,1,0); key.castShadow=true; key.shadow.mapSize.set(1024,1024); sc.add(key,key.target);
     const rim=new THREE.DirectionalLight(0x9ab8e0,.7); rim.position.set(-3,2.5,-3); sc.add(rim);
     const ped=new THREE.Mesh(new THREE.CylinderGeometry(.7,.78,.12,40),mat(0x2a1e14,{roughness:.5})); ped.position.y=-.06; ped.receiveShadow=true; sc.add(ped);
     const aro=new THREE.Mesh(new THREE.TorusGeometry(.74,.012,6,48),mat(0xc9a24a,{metalness:.8,roughness:.3})); aro.rotation.x=Math.PI/2; sc.add(aro);
-    const cam=new THREE.PerspectiveCamera(28,1,.1,50); cam.position.set(0,1.35,5.2); cam.lookAt(0,.95,0);
-    pr={renderer,sc,cam,boneco:null,ang:.5,arrasto:false};
+    const chao=new THREE.Mesh(new THREE.CircleGeometry(6,40),mat(0x16110c,{roughness:.9})); chao.rotation.x=-Math.PI/2; chao.position.y=-.12; chao.receiveShadow=true; sc.add(chao);
+    const cam=new THREE.PerspectiveCamera(28,1,.1,60);
+    pr={renderer,sc,cam,boneco:null,veic:null,ang:.5,arrasto:false,olhar:new THREE.Vector3(0,.95,0),dist:5.2,alvoDist:5.2,alvoOlhar:new THREE.Vector3(0,.95,0)};
     let ultimo=null; canvas.addEventListener('pointerdown',e=>{ pr.arrasto=true; ultimo=e.clientX; canvas.setPointerCapture(e.pointerId); });
     canvas.addEventListener('pointermove',e=>{ if(!pr.arrasto) return; pr.ang+=(e.clientX-ultimo)*.012; ultimo=e.clientX; });
     const solta=()=>{ pr.arrasto=false; }; canvas.addEventListener('pointerup',solta); canvas.addEventListener('pointercancel',solta);
     const laco=(ts)=>{ if(!ov.isConnected){ renderer.dispose(); renderer.forceContextLoss(); return; }
-      const w=canvas.clientWidth||1, h=canvas.clientHeight||1; if(canvas.width!==Math.round(w*renderer.getPixelRatio())) renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
-      if(!pr.arrasto && !reduz()) pr.ang+=.006; if(pr.boneco){ pr.boneco.rotation.y=pr.ang; const u=pr.boneco.userData; u.cabeca.rotation.y=Math.sin(ts/1300)*.15; u.tronco.position.y=Math.sin(ts/700)*.008; }
+      const w=canvas.clientWidth||1, h=canvas.clientHeight||1; if(canvas.width!==Math.round(w*renderer.getPixelRatio())) renderer.setSize(w,h,false); cam.aspect=w/h;
+      pr.dist+=(pr.alvoDist-pr.dist)*.08; pr.olhar.lerp(pr.alvoOlhar,.08); cam.position.set(pr.olhar.x,pr.olhar.y+.4,pr.olhar.z+pr.dist); cam.lookAt(pr.olhar); cam.updateProjectionMatrix();
+      if(!pr.arrasto && !reduz()) pr.ang+=.006;
+      if(pr.boneco){ pr.boneco.rotation.y=pr.ang; const u=pr.boneco.userData; u.cabeca.rotation.y=Math.sin(ts/1300)*.15; u.tronco.position.y=Math.sin(ts/700)*.008; }
+      if(pr.veic) pr.veic.rotation.y=pr.ang*.6-.5;
       renderer.render(sc,cam); requestAnimationFrame(laco); };
     requestAnimationFrame(laco);
   } }catch(e){ console.error('Prévia do guarda-roupa indisponível:',e); pr=null; }
   if(!pr) ov.querySelector('.gr-palco').classList.add('sem3d');
-  const atualizar=()=>{ ov.querySelectorAll('.gr-opcoes button').forEach(b=>b.setAttribute('aria-pressed',String(sel[b.dataset.k]===b.dataset.v)));
-    ov.querySelector('.gr-nome').textContent=(ROUPAS[sel.roupa]||ROUPAS.sobretudo).nome;
-    if(pr){ if(pr.boneco) pr.sc.remove(pr.boneco); pr.boneco=pessoa('vice',lookVincent(sel)); pr.boneco.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); pr.sc.add(pr.boneco); } };
-  ov.querySelector('.gr-opcoes').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; sel[b.dataset.k]=b.dataset.v; atualizar(); });
+  // o que a escolha custa e o que a impede
+  const pendencias=()=>{ let custo=0, trava=null; const compras=[];
+    for(const k in sel){ const it=itemDe(k,sel[k]); if(!it) continue;
+      if(it.conquista && !temConquista(it.conquista)){ if(!trava) trava={it,c:CONQUISTAS[it.conquista]}; continue; }
+      if(it.preco && !possui(k,sel[k])){ custo+=it.preco; compras.push(k+':'+sel[k]); } }
+    return {custo,trava,compras}; };
+  const atualizar=()=>{
+    ov.querySelectorAll('.gr-opcoes button').forEach(b=>b.setAttribute('aria-pressed',String(sel[b.dataset.k]===b.dataset.v)));
+    ov.querySelectorAll('[data-aba]').forEach(el=>{ if(el.closest('.gr-abas')) el.setAttribute('aria-selected',String(el.dataset.aba===aba)); else el.hidden=el.dataset.aba!==aba; });
+    ov.querySelector('.gr-caixa-v').textContent='Caixa: '+reais(S.money);
+    // ficha da peça escolhida por último
+    const it=itemDe(foco.k,foco.v), nome= it ? it.nome : foco.k==='roupa' ? ROUPAS[foco.v].nome : foco.k==='veiculo' ? 'A pé' : '';
+    let est='';
+    if(it && it.conquista) est= temConquista(it.conquista) ? `Exclusivo da conquista «${CONQUISTAS[it.conquista].nome}».` : `Exclusivo: só com a conquista «${CONQUISTAS[it.conquista].nome}». ${CONQUISTAS[it.conquista].desc}`;
+    else if(it && it.preco) est= possui(foco.k,foco.v) ? 'No seu armário.' : 'À venda por '+reais(it.preco)+'.';
+    ov.querySelector('.gr-info').innerHTML= nome ? `<b>${nome}</b>${it&&it.desc?`<span>${it.desc}</span>`:''}${est?`<i>${est}</i>`:''}` : '';
+    const {custo,trava}=pendencias(), bt=ov.querySelector('.gr-veste'), av=ov.querySelector('.gr-aviso');
+    if(trava){ bt.disabled=true; bt.textContent='Vestir'; av.textContent=`«${trava.it.nome}» é exclusivo da conquista «${trava.c.nome}».`; }
+    else if(custo>0){ bt.textContent='Comprar e vestir · '+reais(custo); bt.disabled=S.money<custo; av.textContent= S.money<custo ? `Faltam ${reais(custo-S.money)} no caixa.` : ''; }
+    else { bt.disabled=false; bt.textContent='Vestir'; av.textContent=''; }
+    if(pr){ if(pr.boneco) pr.sc.remove(pr.boneco); pr.boneco=pessoa('vice',lookVincent(sel)); pr.boneco.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); pr.sc.add(pr.boneco);
+      if(pr.veic){ pr.sc.remove(pr.veic); pr.veic=null; }
+      const vv=VEICULOS[sel.veiculo];
+      if(vv && aba==='garagem'){ pr.veic=veiculo(sel.veiculo); const moto=vv.tipo==='moto'; pr.veic.scale.setScalar(moto?.85:.5); pr.veic.position.set(0,0,-1.8); pr.sc.add(pr.veic);   // o veículo atrás do pedestal
+        pr.alvoDist=8.6; pr.alvoOlhar.set(0,.9,-.9); }
+      else { pr.alvoDist=5.2; pr.alvoOlhar.set(0,.95,0); } } };
+  ov.querySelector('.gr-opcoes').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; sel[b.dataset.k]=b.dataset.v; foco={k:b.dataset.k,v:b.dataset.v}; atualizar(); });
+  ov.querySelector('.gr-abas').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; aba=b.dataset.aba; foco= aba==='garagem' ? {k:'veiculo',v:sel.veiculo} : aba==='acess' ? {k:'rosto',v:sel.rosto} : {k:'roupa',v:sel.roupa}; atualizar(); });
   const fechar=()=>{ removeEventListener('keydown',tecla); ov.remove(); const ab=document.querySelector('.gr-abre'); if(ab) ab.focus(); };
   const tecla=e=>{ if(e.key==='Escape') fechar(); };
   addEventListener('keydown',tecla);
   ov.querySelector('.gr-cancela').onclick=fechar;
-  ov.querySelector('.gr-veste').onclick=()=>{ S.figurino=Object.assign({},sel); window.figurino.versao++; save(); fechar(); try{ montar(); }catch(e){ console.error(e); } };
+  ov.querySelector('.gr-veste').onclick=()=>{ const {custo,trava,compras}=pendencias(); if(trava || S.money<custo) return;
+    if(custo){ S.money-=custo; S.armario=((S.armario)||[]).concat(compras); }
+    S.figurino=Object.assign({},sel); window.figurino.versao++; save(); fechar();
+    const ci=document.querySelector('.clock-info'), t=ci&&ci.firstChild; if(t && t.nodeType===3) t.textContent=t.textContent.replace(/^R\$ [^·]+/,'R$ '+S.money.toLocaleString('pt-BR')+' ');   // o caixa do topo
+    try{ montar(); }catch(e){ console.error(e); } };
   atualizar(); ov.querySelector('.gr-veste').focus();
 }
 function botaoGuarda(){
