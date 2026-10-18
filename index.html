@@ -892,6 +892,17 @@ body.mj-aberto{overflow:hidden}
 .sk-seg i.item{background:linear-gradient(180deg,#9fe0b0,#5FA08C)}
 @media (max-width:720px){ .it-lista{grid-template-columns:1fr} .it-card{grid-template-columns:auto 1fr;} .it-acao{grid-column:1/-1;flex-direction:row;justify-content:flex-end;align-items:center} }
 @media (max-width:640px){ .mh-acoes{gap:4px} .sidebtn.mh-btn{padding:7px 8px} .masthead .mh-line .mh-d:last-of-type,.masthead .mh-line::after{display:none} }
+
+/* loja no local e itens recebidos */
+.it-longe{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border-radius:5px;background:rgba(190,74,51,.12);border:1px solid rgba(190,74,51,.4);color:#f2c4b4;font-size:.9rem}
+.it-longe b{color:#ffd8c8}
+.it-aqui{margin:0 0 12px;padding:8px 12px;border-radius:5px;background:rgba(95,160,140,.14);border:1px solid rgba(95,160,140,.45);color:#bfe8d6;font-size:.9rem}
+.sidebtn.loja-btn{display:flex;align-items:center;gap:8px;width:100%;margin:2px 0 0;padding:10px 14px;text-align:left;font-variant:normal;letter-spacing:0;font-size:.95rem;
+  color:#2c5a5e;background:rgba(95,160,140,.12);border:1px dashed rgba(44,90,94,.55);border-radius:2px}
+.sidebtn.loja-btn:hover{background:rgba(95,160,140,.22);color:#1d3f42;border-color:#2c5a5e}
+.evd-item{--pc:#b98f2f}
+.evd-fala{margin:14px 6px 0;font-style:italic;color:#4a3a28;line-height:1.45}
+.evd-fala span{display:block;font-style:normal;font-size:.8rem;color:#8a7a5a;margin-top:3px}
 </style>
 </head>
 <body>
@@ -1017,6 +1028,7 @@ window.closeEvidencePopup = function(){
 };
 function renderEvidencePopup(){
   if(!evidencePopupQueue.length) return "";
+  if(String(evidencePopupQueue[0]).indexOf('item:')===0) return itemPopupHtml(evidencePopupQueue[0]);
   registrarProvas();
   const id = evidencePopupQueue[0], tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id);
   if(renderEvidencePopup._soou!==id){ renderEvidencePopup._soou=id; setTimeout(()=>som.efeito('prova'),120); }
@@ -1403,6 +1415,7 @@ function grantAchievement(id){
   S.conquistas.push(id);
   try{ save(); }catch(e){}
   if(window.som) setTimeout(()=>som.efeito('conquista'),300);
+  try{ entregarRecompensa(id); }catch(e){}
 }
 
 /* Checa os eixos globais (estilo de jogo, relações, narrativas amarradas a
@@ -8542,6 +8555,7 @@ window.usarItem = function(id){
 window.comprarItem = function(id){
   const it=ITENS[id]; if(!it) return;
   if(it.tipo!=='consumivel' && temItem(id)) return;
+  if(!naLoja()){ const l=lojaLoc(); mochilaAviso=l?'O Nelson só vende '+l.onde+'.':'Ninguém vende isso neste capítulo.'; desenharMochila(); return; }
   if(!reqItemOk(it)){ mochilaAviso='O Nelson não vende isso pra você ainda ('+reqItemTxt(it)+').'; desenharMochila(); return; }
   if(S.money<it.preco){ mochilaAviso='Falta R$ '+(it.preco-S.money).toLocaleString('pt-BR')+' para '+it.nome+'.'; if(window.som) som.efeito('erro'); desenharMochila(); return; }
   S.money-=it.preco; S.itens[id]=(S.itens[id]||0)+1;
@@ -8552,10 +8566,10 @@ function cartaoItem(id,modo){
   const it=ITENS[id], qtd=(S.itens||{})[id]||0, tem=qtd>0;
   let acao='';
   if(modo==='meus'){ if(it.tipo==='consumivel') acao=`<button type="button" class="it-btn usar" onclick="usarItem('${id}')">Usar</button>`; else acao=`<span class="it-ativo">Ativo</span>`; }
-  else { const bloqueado=!reqItemOk(it), possui=it.tipo!=='consumivel'&&tem;
+  else { const bloqueado=!reqItemOk(it)||!naLoja(), possui=it.tipo!=='consumivel'&&tem;
     acao = possui ? `<span class="it-ativo">Na mochila</span>`
       : `<button type="button" class="it-btn" ${bloqueado?'disabled':''} onclick="comprarItem('${id}')">R$ ${it.preco.toLocaleString('pt-BR')}</button>`;
-    if(bloqueado) acao+=`<span class="it-req">${reqItemTxt(it)}</span>`; }
+    if(!reqItemOk(it)) acao+=`<span class="it-req">${reqItemTxt(it)}</span>`; }
   return `<div class="it-card t-${it.tipo}${modo!=='meus'&&!reqItemOk(it)?' travado':''}">
     <span class="it-ico">${icoItem(it)}</span>
     <div class="it-txt"><i>${TIPOS_ITEM[it.tipo]}${it.tipo==='consumivel'&&tem&&modo==='meus'?' · ×'+qtd:''}</i><b>${it.nome}</b><span class="it-ef">${efeitoItem(it)}</span><small>${it.desc}</small></div>
@@ -8567,10 +8581,64 @@ function itensHtml(){
    ${meus.length?`<div class="it-lista">${meus.map(id=>cartaoItem(id,'meus')).join('')}</div>`:'<p class="mo-vazio">Nenhum item. O Nelson vende ferramentas e favores na aba Loja.</p>'}`;
 }
 function lojaHtml(){
-  const grupos=['ferramenta','mesa','consumivel'];
+  const grupos=['ferramenta','mesa','consumivel'], l=lojaLoc(), aqui=naLoja();
+  const faixa = !l ? `<p class="it-aviso">Neste capítulo o Nelson não tem onde atender.</p>`
+    : aqui ? `<p class="it-aqui">Você está ${l.onde}. O Nelson abre a mala.</p>`
+    : `<div class="it-longe"><span>O Nelson só vende pessoalmente, <b>${l.onde}</b>. Vá até lá pelo mapa para comprar.</span>${mode==='map'||mode==='scene'?`<button type="button" class="it-btn" onclick="irParaLoja()">Ir até ${l.nome}</button>`:''}</div>`;
   return `<p class="it-loja-intro">${PORTRAITS.nelson?`<span class="it-nelson">${PORTRAITS.nelson.svg}</span>`:''}<span><b>Nelson</b> — “Pago na hora, sem nota. Ferramenta boa não se empresta.”<br><small>Caixa: R$ ${(S.money||0).toLocaleString('pt-BR')}</small></span></p>
-   ${mochilaAviso?`<p class="it-aviso" role="status">${mochilaAviso}</p>`:''}
+   ${faixa}${mochilaAviso?`<p class="it-aviso" role="status">${mochilaAviso}</p>`:''}
    ${grupos.map(g=>`<h4 class="mo-cap">${TIPOS_ITEM[g]}s</h4><div class="it-lista">${Object.keys(ITENS).filter(id=>ITENS[id].tipo===g).map(id=>cartaoItem(id,'loja')).join('')}</div>`).join('')}`;
+}
+
+
+/* ---------- onde o Nelson vende e o que a história entrega ---------- */
+/* A loja fica num lugar do mapa: é preciso ir até lá (e a viagem tem o seu risco). */
+const PONTOS_LOJA=[['bar','nos fundos do Bar Alcatrão'],['lapa','na Galeria Falsa da Lapa'],['ruaAugusta','na loja de materiais da Rua Augusta'],['jardins','nos fundos da Galeria Zima']];
+function lojaLoc(){ const A=(typeof getActiveLocs==='function'&&getActiveLocs())||{}; const p=PONTOS_LOJA.find(([id])=>A[id]); return p?{id:p[0],onde:p[1],nome:A[p[0]].name}:null; }
+function naLoja(){ const l=lojaLoc(); return !!(l && S.loc===l.id && (mode==='scene'||mode==='map')); }
+window.irParaLoja = function(){ const l=lojaLoc(); if(!l) return; fecharMochila(); if(mode!=='map') startMap(); setTimeout(()=>travelTo(l.id),60); };
+/* Recompensas da história: fechar um capítulo ou firmar uma relação entrega um item.
+   Se ele já tem a ferramenta, o Nelson compra de volta pela metade. */
+const RECOMPENSAS_ITEM={
+  cap1Concluido:{item:'lupa', de:'Íris', fala:'“A minha velha lupa. Você vai precisar mais que eu.”'},
+  cap2Concluido:{item:'advogado', de:'Helena', fala:'“Guarde esse cartão. E torça para não precisar.”'},
+  cap3Concluido:{item:'lanternaUV', de:'Íris', fala:'“365 nanômetros. Verniz novo acende feito vitrine.”'},
+  cap4Concluido:{item:'relatorio', qtd:2, de:'Carol', fala:'“Dois relatórios prontos. Só assinar e entregar no dia certo.”'},
+  cap5Concluido:{item:'pinceis', de:'Anya', fala:'“Marta siberiana. Não me pergunte como chegaram aqui.”'},
+  cap6Concluido:{item:'radio', de:'Helena', fala:'“Frequência fechada. Agora você atende quando eu chamo.”', se:{confianca:50}, senao:{item:'advogado', de:'Helena', fala:'“Ainda não confio o rádio a você. Fique com o cartão do advogado.”'}},
+  cap7Concluido:{item:'agenda', de:'Nelson', fala:'“São Paulo é grande, mas os telefones são os mesmos.”'},
+  cap8Concluido:{item:'gazuas', de:'Anya', fala:'“Você abre fechadura como quem pede licença. Use as minhas.”'},
+  cap9Concluido:{item:'lampada', de:'Íris', fala:'“Mandei pelo correio. Braço articulado, lente boa.”'},
+  cap10Concluido:{item:'advogado', qtd:2, de:'Beatriz', fala:'“Dois cartões. A semana que vem vai ser pior.”'},
+  cap11Concluido:{item:'cachaca', qtd:2, de:'Nelson', fala:'“Para o brinde, se houver brinde.”'},
+  vinculoHelena:{item:'radio', de:'Helena', fala:'“Se eu chamar, você atende.”'},
+  alianciaAnya:{item:'gazuas', de:'Anya', fala:'“Entre amigos, ferramenta se empresta.”'},
+  alianciaBeatriz:{item:'relatorio', qtd:2, de:'Beatriz', fala:'“Faça como eu faço: por escrito.”'},
+  redeExtensa:{item:'agenda', de:'Nelson', fala:'“Você já sabe mais nomes que eu. Fique com a agenda.”'}
+};
+function entregarRecompensa(conq){
+  let r=RECOMPENSAS_ITEM[conq]; if(!r) return;
+  S.itensGanhos=S.itensGanhos||{}; if(S.itensGanhos[conq]) return; S.itensGanhos[conq]=true;
+  if(r.se && Object.keys(r.se).some(k=>(S.meters[k]||0)<r.se[k])) r=r.senao;
+  const it=ITENS[r.item]; if(!it) return; S.itens=S.itens||{};
+  let extra='';
+  if(it.tipo!=='consumivel' && S.itens[r.item]){ const v=Math.round(it.preco/2); S.money+=v; extra=`Você já tinha um; o Nelson comprou este por R$ ${v.toLocaleString('pt-BR')}.`; }
+  else S.itens[r.item]=(S.itens[r.item]||0)+(r.qtd||1);
+  evidencePopupQueue.push('item:'+r.item+':'+(r.qtd||1)+':'+encodeURIComponent(r.de+'|'+r.fala+'|'+extra));
+}
+function itemPopupHtml(entrada){
+  const [,id,qtd,txt]=entrada.split(':'), it=ITENS[id]; if(!it) return '';
+  const [de,fala,extra]=decodeURIComponent(txt||'').split('|');
+  if(renderEvidencePopup._soou!==entrada){ renderEvidencePopup._soou=entrada; setTimeout(()=>som.efeito('item'),120); }
+  return `<div class="evd-overlay" onclick="if(event.target===this) window.closeEvidencePopup()">
+   <div class="evd-modal evd-nova evd-item" role="dialog" aria-label="Item recebido">
+    <div class="evd-modal-title">Item recebido</div>
+    <div class="evd-ficha"><div class="evd-ficha-ico">${icoItem(it,40)}</div><div class="evd-ficha-tipo">${TIPOS_ITEM[it.tipo]}${+qtd>1?' · ×'+qtd:''}</div>
+     <div class="evd-modal-name">${it.nome}</div><div class="evd-ficha-sub">${efeitoItem(it)}</div></div>
+    <p class="evd-fala">${fala||''}<span>— ${de||''}</span></p>${extra?`<p class="evd-guardada">${extra}</p>`:''}
+    <div class="evd-acoes"><button class="choice-btn evd-modal-btn" onclick="window.closeEvidencePopup()">Continuar</button>
+     <button class="sidebtn evd-ver" onclick="window.closeEvidencePopup();abrirMochila(null,'itens')">Ver na mochila</button></div>
+   </div></div>`;
 }
 
 const ICONE_MOCHILA='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 7.5a5 5 0 0 1 10 0V17H5z"/><path d="M7.5 4.2V3h5v1.2M5 11h10M8.5 11v2h3v-2"/></svg>';
@@ -13366,6 +13434,7 @@ function enterLocation(locId){
   mode="scene"; render();
 }
 
+function botaoLoja(loc){ const l=lojaLoc(); return l&&l.id===loc ? `<button type="button" class="sidebtn loja-btn" onclick="abrirMochila(null,'loja')">${ICONE_MOCHILA} Ver a mala do Nelson — ferramentas e favores</button>` : ''; }
 function renderScenePanel(){
   const cs = currentScene;
   if(cs.filler){
@@ -13379,11 +13448,11 @@ function renderScenePanel(){
       return sceneCard(cs.loc, `<p><em>Nada de novo em ${L?L.name:cs.loc} agora.</em></p>
        <p style="color:var(--brassL)">Há diálogo novo esperando em: ${novidades.join(" · ")}.</p>
        <p style="font-size:.86rem;color:var(--faded)">O dia não anda daqui enquanto houver gente para ouvir. Volte ao mapa e procure o halo dourado.</p>
-       <div class="choices"><button class="choice-btn" onclick="startMap()">Voltar ao mapa (sem custo)</button></div>`);
+       <div class="choices"><button class="choice-btn" onclick="startMap()">Voltar ao mapa (sem custo)</button>${botaoLoja(cs.loc)}</div>`);
     }
     return sceneCard(cs.loc, `<p><em>Nada de novo em ${L?L.name:cs.loc} agora.</em></p>
      <div class="choices"><button class="choice-btn" onclick="passPeriod()">Investigar a vizinhança (custa 1 período)</button>
-     <button class="choice-btn" onclick="startMap()">Voltar ao mapa (sem custo)</button>
+     <button class="choice-btn" onclick="startMap()">Voltar ao mapa (sem custo)</button>${botaoLoja(cs.loc)}
      ${semNada ? `<button class="choice-btn" onclick="skipToNextCaso()">Nada mais em lugar nenhum — avançar para o próximo caso</button>` : ""}</div>`);
   }
   const sc = cs.scene;
@@ -13404,7 +13473,7 @@ function renderScenePanel(){
   if(!algumaAberta){
     html += `<button class="choice-btn" onclick="startMap()">← Voltar ao mapa (sem custo) — nada aqui está ao seu alcance ainda</button>`;
   }
-  html += `</div>`;
+  html += botaoLoja(cs.loc) + `</div>`;
   return sceneCard(cs.loc, html);
 }
 
@@ -16422,12 +16491,30 @@ mapa3d.viajar=function(id, confirmado){
   st.viagem={id, pernas:planejar(S.loc,id), i:0, k:0};
   traveling={from:S.loc, to:id};
   st.seguir=true;
-  const total=st.viagem.pernas.reduce((s,p)=>s+(p.tipo==='pe'?p.pts.length:p.tipo==='barco'?8:0),0);
-  st.viagem.vel=Math.max(3.4,total/3.6)*(M.corpoV.veic?1.9:1);    // viagens longas não passam de ~4 s; de carro ou moto, metade disso
+  /* A pé ele anda sempre no mesmo passo (as pernas acompanham). Trajeto longo sem
+     veículo próprio vira corrida de táxi; de táxi, carro ou moto a velocidade é de
+     carro, e só cresce um pouco nos trajetos enormes para a viagem não passar de ~5 s. */
+  const total=st.viagem.pernas.reduce((s,p)=>s+(p.tipo==='pe'?p.pts.length:0),0);
+  const PASSO=3.4, LIMITE_A_PE=14;
+  st.viagem.taxi = !M.corpoV.veic && total>LIMITE_A_PE;
+  st.viagem.vel = (M.corpoV.veic||st.viagem.taxi) ? Math.max(7,total/5) : PASSO;
   if(reduzMov() || window.__mapa3dInstantaneo) concluirViagem();
 };
+function taxiDaCidade(){
+  if(M.taxi && M.taxi.userData.cid===CID.id) return M.taxi;
+  if(M.taxi) M.scene.remove(M.taxi);
+  const t=window.figurino.veiculo('opala'); if(!t) return null;
+  const corT = CID.id==='sp' ? 0xeeeee8 : 0xf2c21a;   // amarelo no Rio, branco em São Paulo
+  const trocadas=new Map();
+  t.traverse(o=>{ if(o.isMesh && o.material && o.material.clearcoat===1 && o.material.color.getHex()===0x0c0c0e){
+    if(!trocadas.has(o.material)){ const m=o.material.clone(); m.color.setHex(corT); trocadas.set(o.material,m); } o.material=trocadas.get(o.material); } });
+  const placa=new THREE.Mesh(new THREE.BoxGeometry(.5,.16,.2),new THREE.MeshStandardMaterial({color:0xfff2c0,emissive:0xffd060,emissiveIntensity:.8}));
+  placa.position.set(0,1.0,-.25); t.add(placa);
+  if(CID.id!=='sp'){ const faixa=new THREE.Mesh(new THREE.BoxGeometry(1.82,.06,3.2),new THREE.MeshStandardMaterial({color:0x1f4fa8,roughness:.4})); faixa.position.set(0,.62,0); t.add(faixa); }
+  t.scale.setScalar(.7); t.userData.cid=CID.id; t.userData.tipo='carro'; t.visible=false; M.scene.add(t); M.taxi=t; return t;
+}
 function concluirViagem(){
-  const v=st.viagem; if(!v) return; st.viagem=null; M.barca.visible=false; M.luzBarca.userData.op=0;
+  const v=st.viagem; if(!v) return; st.viagem=null; M.barca.visible=false; M.luzBarca.userData.op=0; if(M.taxi) M.taxi.visible=false;
   const id=v.id;
   S.loc=id; S.trail.push(id); if(S.trail.length>14) S.trail.shift();
   traveling=null;
@@ -16558,7 +16645,8 @@ function quadro(ts){
   const andando=passoViagem(dtReal);
   const T=M.G.T, tt=T(Math.round(st.pos.x),Math.round(st.pos.z)), tunel=tt==='tunel', naBarca=st.naBarca;
   const yV= st.naAgua ? (naBarca?.42:.3) : tt==='ponte'?.38:.18;
-  const cv=M.corpoV, vc=cv.veic, dirige=!!vc && andando && !naBarca, moto=vc && vc.userData.tipo==='moto';
+  const cv=M.corpoV, emTaxi=!!(st.viagem&&st.viagem.taxi), vc= emTaxi ? taxiDaCidade() : cv.veic, dirige=!!vc && andando && !naBarca, moto=vc && vc.userData.tipo==='moto';
+  if(cv.veic && emTaxi) cv.veic.visible=false;
   M.vincent.visible=!tunel && !naBarca && !(dirige && !moto); M.anel.visible=!tunel;
   st.fase=(st.fase||0)+(andando&&!naBarca&&!dirige?dt*11:0);
   // na moto ele vai sentado no banco; de carro some dentro dele
@@ -16569,6 +16657,7 @@ function quadro(ts){
   cv.bE.rotation.x= dirige ? -1.1 : -.08-bal*.8; cv.bD.rotation.x= dirige ? -1.1 : -.08+bal*.8;
   if(vc){ vc.visible=!tunel && !naBarca;
     if(dirige){ vc.position.set(st.pos.x+.5,yV,st.pos.z+.5); vc.rotation.y=M.vincent.rotation.y; if(moto){ const a=vc.userData.assento.z*1.15; M.vincent.position.x+=Math.sin(vc.rotation.y)*a; M.vincent.position.z+=Math.cos(vc.rotation.y)*a; } }
+    else if(emTaxi){ vc.visible=false; }
     else { vc.position.set(st.pos.x+.5+(moto?1:1.6),yV,st.pos.z+.5+.4); vc.rotation.y=Math.PI*.5; } }
   M.anel.position.set(st.pos.x+.5,yV+.02,st.pos.z+.5); M.anel.material.opacity=.45+.35*Math.sin(t*3)**2;
   M.luzTornoz.position.set(st.pos.x+.6,yV+.12,st.pos.z+.5);
