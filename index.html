@@ -8393,7 +8393,7 @@ function registrarProvas(){
       : {cap:capituloDaEvidencia(id)||S.season, caso:S.caso, dia:Math.min(S.day||1,6), per:S.period, loc:loc.name||'', nova:true};
   });
 }
-function provasNovas(){ const m=S.provasMeta||{}; return (S.evidence||[]).filter(id=>m[id]&&m[id].nova).length; }
+function provasNovas(){ const m=S.provasMeta||{}; return (S.evidence||[]).filter(evidenceScopeForSeason(S.season)).filter(id=>m[id]&&m[id].nova).length; }
 function fichaProva(id,cls){
   const tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id), meta=(S.provasMeta||{})[id]||{};
   return `<button type="button" class="sidebtn prova-ficha ${cls||''}" style="--pc:${T.cor}" onclick="abrirMochila('${id}')" aria-label="${T.nome}: ${(EVID[id]||id).replace(/"/g,'&quot;')}">
