@@ -706,6 +706,57 @@ body.mj-aberto{overflow:hidden}
 .paper .meter-bar{background-color:rgba(42,32,24,.12)}
 @media (max-width:640px){ .paper .meter-row{flex-wrap:wrap} .paper .meter-bar{flex:1 1 140px} }
 @media (prefers-reduced-motion: reduce){ #app.entra *{animation:none!important} #menuJogo .mj-gaveta,#menuJogo .mj-fundo{transition:none} }
+
+/* ============ PAINEL DO TOPO (HUD) ============ */
+.statusbar.hud{display:grid;grid-template-columns:minmax(220px,1fr) 2.4fr;grid-template-areas:"tempo metros" "pericias pericias";gap:12px 16px;
+  padding:12px 14px;border-radius:6px;background:linear-gradient(180deg,rgba(22,36,44,.92),rgba(10,18,22,.92));
+  border:1px solid rgba(185,143,47,.25);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 10px 26px rgba(0,0,0,.35)}
+.hud-tempo{grid-area:tempo;display:flex;align-items:center;gap:12px;min-width:0}
+.hud-tempo svg{flex:0 0 auto}
+.hud-tempo-txt{min-width:0}
+.hud-tempo .clock-day{font-family:var(--titulo);font-size:1.12rem;letter-spacing:.06em;color:#f3e7cc}
+.hud-dias{display:flex;align-items:center;gap:3px;margin:3px 0 6px}
+.hud-dias i{width:14px;height:4px;border-radius:2px;background:rgba(255,255,255,.12)}
+.hud-dias i.foi{background:rgba(216,180,90,.45)} .hud-dias i.hoje{background:var(--brassL);box-shadow:0 0 6px rgba(216,180,90,.7)}
+.hud-dias span{margin-left:6px;font-size:.72rem;color:#9a8f78;letter-spacing:.04em}
+.hud-pilulas{display:flex;gap:6px;flex-wrap:wrap}
+.hud-pil{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;padding:2px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);color:#e8dcc0;white-space:nowrap}
+.hud-pil.dinheiro{color:#bfe3c6;border-color:rgba(120,190,140,.35);font-variant-numeric:tabular-nums}
+.hud-pil i{width:7px;height:7px;border-radius:50%}
+.hud-pil.tz-on{color:#f2a493;border-color:rgba(190,74,51,.45)} .hud-pil.tz-on i{background:#e0533a;box-shadow:0 0 6px #e0533a;animation:hudPisca 1.6s ease-in-out infinite}
+.hud-pil.tz-off{color:#cfe8b8;border-color:rgba(140,190,110,.35)} .hud-pil.tz-off i{background:#8cc56e}
+.hud-metros{grid-area:metros;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;min-width:0;flex:none}
+.hm{--c1:#3b6fa5;--c2:#7fb0e6;position:relative;padding:9px 11px 8px;border-radius:5px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.07);overflow:hidden}
+.hm::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,var(--c2),var(--c1))}
+.hm-submundo{--c1:#6a3f86;--c2:#b58ad6}
+.hm-calor{--c1:#c0612a;--c2:#f0b04a}
+.hm-calor.nv2{--c1:#b83a22;--c2:#f07a3a} .hm-calor.nv3{--c1:#a51c14;--c2:#ff5a3a;border-color:rgba(255,90,58,.45);animation:hudAlerta 1.4s ease-in-out infinite}
+.hm-top{display:flex;align-items:center;gap:7px}
+.hm-ico{width:18px;height:18px;color:var(--c2);flex:0 0 auto} .hm-ico svg{width:100%;height:100%;display:block}
+.hm-nome{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#b9ad92;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.hm-num{font-family:var(--titulo);font-size:1.45rem;line-height:1;color:#f6ecd4;font-variant-numeric:tabular-nums;font-weight:700}
+.hm-delta{font-size:.7rem;font-weight:600;padding:1px 6px;border-radius:999px;animation:hudDelta 2.6s ease-out both}
+.hm-delta.sobe{background:rgba(120,200,140,.16);color:#9fe0b0} .hm-delta.desce{background:rgba(240,110,90,.16);color:#f5a090}
+.hm-calor .hm-delta.sobe{background:rgba(240,110,90,.16);color:#f5a090} .hm-calor .hm-delta.desce{background:rgba(120,200,140,.16);color:#9fe0b0}
+.hm-trilho{position:relative;height:6px;margin:8px 0 5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;
+  background-image:linear-gradient(90deg,transparent calc(25% - 1px),rgba(0,0,0,.5) 25%,transparent calc(25% + 1px),transparent calc(50% - 1px),rgba(0,0,0,.5) 50%,transparent calc(50% + 1px),transparent calc(75% - 1px),rgba(0,0,0,.5) 75%,transparent calc(75% + 1px))}
+.hm-trilho i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:linear-gradient(90deg,var(--c1),var(--c2));box-shadow:0 0 10px color-mix(in srgb,var(--c2) 55%,transparent);transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.hm-est{font-size:.76rem;color:var(--c2);font-style:italic;letter-spacing:.02em}
+.hud-pericias{grid-area:pericias;display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)}
+.hud .skchip{display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border-radius:4px;border:1px solid rgba(185,143,47,.22);background:rgba(0,0,0,.22);font-variant:normal;letter-spacing:.02em;font-size:.76rem;color:#d6c9a8}
+.hud .skchip b{color:var(--brassL);font-variant-numeric:tabular-nums}
+.sk-seg{display:inline-flex;gap:1.5px}
+.sk-seg i{width:4px;height:9px;border-radius:1px;background:rgba(255,255,255,.1)} .sk-seg i.on{background:linear-gradient(180deg,#f0cf78,#b98f2f)}
+@keyframes hudPisca{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes hudAlerta{0%,100%{box-shadow:0 0 0 rgba(255,90,58,0)}50%{box-shadow:0 0 14px rgba(255,90,58,.35)}}
+@keyframes hudDelta{0%{transform:translateY(4px);opacity:0}12%{transform:none;opacity:1}80%{opacity:1}100%{opacity:.0}}
+@media (max-width:760px){
+  .statusbar.hud{grid-template-columns:1fr;grid-template-areas:"tempo" "metros" "pericias";padding:10px}
+  .hud-metros{gap:6px} .hm{padding:7px 8px 6px} .hm-num{font-size:1.15rem} .hm-nome{font-size:.62rem;letter-spacing:.08em} .hm-ico{display:none} .hm-est{font-size:.68rem}
+  .hm-top{flex-wrap:wrap;gap:2px 6px} .hm-nome{flex:1 0 100%} .hm-num{order:2} .hm-delta{order:3;font-size:.62rem;padding:0 5px}
+  .hud-pericias{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .hud-pericias::-webkit-scrollbar{display:none} .hud .skchip{flex:0 0 auto}
+}
+@media (prefers-reduced-motion: reduce){ .hm,.hud-pil i,.hm-delta{animation:none!important} }
 </style>
 </head>
 <body>
@@ -2665,23 +2716,44 @@ function shell(inner){
   ${renderFooter()}
   ${renderEvidencePopup()}`;
 }
+/* Painel do topo: relógio e caixa à esquerda, os três medidores como cartões
+   (número, trilho com marcas, estado em palavras e a variação desde a última tela)
+   e as perícias com o nível em segmentos. */
+const HUD_ICONES={
+  confianca:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2l6 2.4v4.8c0 4-2.6 7-6 8.8-3.4-1.8-6-4.8-6-8.8V4.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 10l2.2 2.2L13.4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  submundo:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 8.5c2.2-2.4 4.7-3.4 7.5-3.4s5.3 1 7.5 3.4c-.6 3.4-2.4 6-4.6 6-1.4 0-2-1.4-2.9-1.4s-1.5 1.4-2.9 1.4c-2.2 0-4-2.6-4.6-6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="6.9" cy="9.4" rx="1.5" ry="1" fill="currentColor"/><ellipse cx="13.1" cy="9.4" rx="1.5" ry="1" fill="currentColor"/></svg>',
+  calor:'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2c.6 3-1.8 4.4-3 6.4-1.6 2.6-.8 6.4 3 7.6 3.8-1.2 4.8-4.4 3.6-7.2-.5 1.4-1.4 2-2.2 2.2C12.4 7.6 12.2 4.4 10 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
+};
+const HUD_ESTADOS={
+  confianca:[[30,'Desconfiada'],[60,'Cautelosa'],[85,'Confia em você'],[101,'Total']],
+  submundo:[[30,'Portas fechadas'],[60,'Conhecido'],[85,'Respeitado'],[101,'Da casa']],
+  calor:[[34,'Discreto'],[67,'Na mira'],[85,'Quente'],[101,'Crítico']]
+};
+let hudAnterior=null;
 function renderStatus(){
-  const d=Math.min(S.day,6);
-  return `<div class="statusbar">
-   <div class="clockbox">${clockSVG()}
-    <div class="clock-txt"><div class="clock-day">${DAYS[d-1]} · ${PERIODS[S.period]}</div>
-    <div class="clock-info">R$ ${S.money.toLocaleString('pt-BR')} · Dia ${d} de 6 · ${temTornozeleira()?'<span style="color:var(--verm)">tornozeleira ativa</span>':'<span style="color:var(--brassL)">sem tornozeleira</span>'}</div></div></div>
-   <div class="skillrow">${Object.entries(S.skills).map(([k,v])=>`<span class="skchip">${SKILL_PT[k]} <b>${v}</b></span>`).join("")}</div>
+  const d=Math.min(S.day,6), tz=temTornozeleira();
+  return `<div class="statusbar hud">
+   <div class="hud-tempo">${clockSVG()}
+    <div class="hud-tempo-txt"><div class="clock-day">${DAYS[d-1]} · ${PERIODS[S.period]}</div>
+     <div class="hud-dias" aria-label="Dia ${d} de 6">${[1,2,3,4,5,6].map(n=>`<i class="${n<d?'foi':n===d?'hoje':''}"></i>`).join('')}<span>Dia ${d} de 6</span></div>
+     <div class="hud-pilulas"><span class="hud-pil dinheiro">R$ ${S.money.toLocaleString('pt-BR')}</span><span class="hud-pil ${tz?'tz-on':'tz-off'}"><i></i>${tz?'Tornozeleira ativa':'Sem tornozeleira'}</span></div>
+    </div></div>
    ${renderMeters()}
+   <div class="hud-pericias">${Object.entries(S.skills).map(([k,v])=>`<span class="skchip" title="${SKILL_PT[k]}: nível ${v} de 10"><span class="sk-nome">${SKILL_PT[k]}</span><b>${v}</b><span class="sk-seg">${Array.from({length:10},(_,n)=>`<i class="${n<v?'on':''}"></i>`).join('')}</span></span>`).join("")}</div>
   </div>`;
 }
 function renderMeters(){
-  const m=S.meters;
-  return `<div class="meters">
-   <div class="meter-row"><span class="meter-label">Confiança</span><div class="meter-bar"><div class="meter-fill" style="width:${m.confianca}%;background:linear-gradient(90deg,#2c4b6e,var(--federal))"></div></div><span class="meter-val">${m.confianca}</span></div>
-   <div class="meter-row"><span class="meter-label">Submundo</span><div class="meter-bar"><div class="meter-fill" style="width:${m.submundo}%;background:linear-gradient(90deg,#553a62,var(--plum))"></div></div><span class="meter-val">${m.submundo}</span></div>
-   <div class="meter-row"><span class="meter-label">Calor</span><div class="meter-bar"><div class="meter-fill" style="width:${m.calor}%;background:linear-gradient(90deg,#8f3423,var(--verm))"></div></div><span class="meter-val">${m.calor}</span></div>
-  </div>`;
+  const m=S.meters, ant=hudAnterior||m;
+  hudAnterior={confianca:m.confianca,submundo:m.submundo,calor:m.calor};
+  const cartao=(k,nome)=>{
+    const v=Math.max(0,Math.min(100,m[k]||0)), dv=(m[k]||0)-(ant[k]||0);
+    const est=HUD_ESTADOS[k].find(e=>v<e[0])[1], nivel=HUD_ESTADOS[k].findIndex(e=>v<e[0]);
+    return `<div class="hm hm-${k} nv${nivel}" role="meter" aria-label="${nome}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${v}" aria-valuetext="${v} — ${est}">
+     <div class="hm-top"><span class="hm-ico">${HUD_ICONES[k]}</span><span class="hm-nome">${nome}</span>${dv?`<span class="hm-delta ${dv>0?'sobe':'desce'}">${dv>0?'+':'−'}${Math.abs(dv)}</span>`:''}<b class="hm-num">${v}</b></div>
+     <div class="hm-trilho"><i style="width:${v}%"></i></div>
+     <div class="hm-est">${est}</div></div>`;
+  };
+  return `<div class="meters hud-metros">${cartao('confianca','Confiança')}${cartao('submundo','Submundo')}${cartao('calor','Calor')}</div>`;
 }
 function evidenceScopeForSeason(season){
   if(season===1) return e=>/^ev\d+$/.test(e);
