@@ -757,6 +757,19 @@ body.mj-aberto{overflow:hidden}
   .hud-pericias{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .hud-pericias::-webkit-scrollbar{display:none} .hud .skchip{flex:0 0 auto}
 }
 @media (prefers-reduced-motion: reduce){ .hm,.hud-pil i,.hm-delta{animation:none!important} }
+
+/* ============ MESAS (perícia, bancada, operações): contadores do topo em blocos ============ */
+#mesa-root .mp-meters,#forja-root .f-meters,#op-root .op-meters{gap:8px;align-items:stretch}
+#mesa-root .mp-meter,#forja-root .f-meter,#op-root .op-meter{min-width:76px;padding:7px 11px 6px;border-radius:5px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+#mesa-root .mp-meter b,#forja-root .f-meter b,#op-root .op-meter b{display:block;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#mesa-root .mp-meter{border-top:2px solid rgba(95,160,140,.55)}
+#op-root .op-meter{border-top:2px solid rgba(95,160,140,.55)}
+#forja-root .f-meter{border-top:2px solid rgba(201,139,58,.6)}
+#mesa-root .mp-panel,#forja-root .f-panel,#op-root .op-panel{border-radius:5px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+@media (max-width:640px){ #mesa-root .mp-meter,#forja-root .f-meter,#op-root .op-meter{min-width:0;flex:1 1 30%;padding:5px 8px}
+  #mesa-root .mp-meter b,#forja-root .f-meter b,#op-root .op-meter b{white-space:normal;font-size:15px}
+  #mesa-root .mp-meter i,#forja-root .f-meter i,#op-root .op-meter i{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.06em} }
 </style>
 </head>
 <body>
@@ -5236,7 +5249,7 @@ function tutorialCaso(tipo){
 }
 window.playTutorial = function(tipo){
   const campanha = S;
-  S = {skills:{percepcao:0, falsificacao:0, infiltracao:0}, money:0, meters:{submundo:0, calor:0, confianca:0}, integridade:0, metodo:0, relacoes:{}};
+  S = {skills:{percepcao:0, falsificacao:0, infiltracao:0}, money:0, meters:{submundo:0, calor:0, confianca:0}, integridade:0, metodo:0, relacoes:{}, flags:{}, conquistas:[], day:1};
   const restaurar = function(){ S = campanha; };
   const caso = tutorialCaso(tipo);
   if(tipo==='pericia'){
@@ -12790,7 +12803,7 @@ function render(){
   else if(mode==="tutorial-fim"){ inner = renderTutorialFim(); }
   else if(mode==="manual"){ inner = renderManual(); }
   /* telas de consulta (dossiê, conquistas, diário) vêm sem card: põe o papel por baixo para o texto não sumir no fundo escuro */
-  if((mode==="dossie"||mode==="conquistas"||mode==="evidencias"||mode==="daily-intro"||mode==="weekly-intro") && inner.indexOf('scene-card')<0) inner = sceneCard(null, inner);
+  if((mode==="dossie"||mode==="conquistas"||mode==="evidencias"||mode==="daily-intro"||mode==="weekly-intro"||mode==="tutorial-intro"||mode==="tutorial-fim") && inner.indexOf('scene-card')<0) inner = sceneCard(null, inner);
   app.innerHTML = shell(inner);
   const chave = mode+'|'+currentScene+'|'+S.season+'|'+S.caso;
   if(chave!==render._chave){ render._chave=chave; app.classList.remove('entra'); void app.offsetWidth; app.classList.add('entra'); }
