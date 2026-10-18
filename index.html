@@ -111,6 +111,8 @@ button:focus-visible{outline:2px solid var(--brassL);outline-offset:2px}
   margin-bottom:10px;line-height:0;background:var(--sea)}
 .map-wrap svg{width:100%;height:auto;display:block}
 .pin{cursor:pointer}
+.medalhao-svg [stroke="#4A3A28"]{stroke:#D8B45A}
+.medalhao-svg [fill="#4A3A28"]{fill:#D8B45A}
 .pin-hit{fill:rgba(0,0,0,.001);stroke:var(--brassD);stroke-width:2;opacity:.85;transition:stroke .12s,stroke-width .12s,opacity .12s}
 .pin:hover .pin-hit{stroke:var(--brassL);stroke-width:2.6;opacity:1}
 .pin.fora .pin-hit{stroke:var(--verm)}
@@ -2253,6 +2255,15 @@ function posicionarRotulos(visiveis, sp){
   return out;
 }
 
+/* Local sem medalhão pintado na arte (o Píer Mauá fica no terminal de navios,
+   onde a pintura não pôs nenhum): desenha um no mesmo estilo — disco escuro,
+   aro dourado, haste — com o ícone vetorial do local em dourado. */
+function medalhaoDesenhado(id){
+  const ic = pinIcon(id);
+  return `<g class="medalhao-svg"><line x1="0" y1="11" x2="0" y2="24" stroke="#B98F2F" stroke-width="1.4"/>
+    <circle r="11.5" fill="#15110C" stroke="#B98F2F" stroke-width="1.6"/>${ic||''}</g>`;
+}
+
 function mapSVG(){
   const ACTIVE=getActiveLocs();
   const cur=S.loc;
@@ -2286,6 +2297,7 @@ function mapSVG(){
     const r=rotulos[id];
     pins+=`<g class="pin ${fora?'fora':''} ${viva?'tem-cena':''} ${isCur?'atual':''}" transform="translate(${l.x},${l.y})" onclick="travelTo('${id}')" role="button" tabindex="0" aria-label="${l.name}${viva?' — há novidade aqui':''}${isCur?' — você está aqui':''}">
      <title>${l.name} — ${l.desc}${viva?' · há diálogo novo':' · nada de novo por ora'}</title>
+     ${l.medalhao?medalhaoDesenhado(id):''}
      ${viva?'<circle class="halo" r="15.5"/>':''}
      ${isCur?'<circle class="pulse" r="22"/>':''}
      <circle class="pin-hit" r="14"/>
@@ -7725,7 +7737,7 @@ const LOCS_S2 = {
  outeiro:{name:"Outeiro da Glória",zone:"Zona Sul",desc:"Igreja Imperial — Cripta",x:207,y:122,g:"E",short:"Outeiro Glória",lx:17,ly:4,la:"start",caso:2,reqFlag:"pistaOuteiro"},
  chopin:{name:"Edifício Chopin",zone:"Zona Sul",desc:"Copacabana — Sede da Lótia",x:555,y:389,g:"L",short:"Ed. Chopin",lx:17,ly:4,la:"start",reqFlag:"pistaLotia"},
  santa_teresa:{name:"Oficinas do Bonde",zone:"Centro Antigo",desc:"Santa Teresa — Trilhos",x:178,y:204,g:"T",short:"Santa Teresa",lx:17,ly:4,la:"start",caso:4,reqFlag:"pistaBonde"},
- pier_maua:{name:"Porto Maravilha",zone:"Centro",desc:"Píer Mauá — Escoamento",x:358,y:188,g:"X",short:"Píer Mauá",lx:17,ly:4,la:"start",reqFlag:"pistaPorto"},
+ pier_maua:{name:"Porto Maravilha",zone:"Centro",desc:"Píer Mauá — Escoamento",x:386,y:244,medalhao:true,g:"X",short:"Píer Mauá",lx:17,ly:4,la:"start",reqFlag:"pistaPorto"},
  bar:{name:"Bar Alcatrão",zone:"Centro Antigo",desc:"Lapa — Seu Nelson",x:179,y:117,g:"B",short:"Bar Alcatrão",lx:17,ly:4,la:"start"},
  atelie:{name:"Ateliê da Íris",zone:"Centro Antigo",desc:"Santo Cristo — restauro",x:329,y:145,g:"A",short:"Ateliê da Íris",lx:-20,ly:26,la:"end"},
  cartorio:{name:"Arquivo do 5º Ofício",zone:"Centro Antigo",desc:"Subsolo do Palacete Valongo",x:300,y:170,g:"V",short:"Valongo (Arquivo)",lx:17,ly:4,la:"start",caso:1},
