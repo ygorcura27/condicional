@@ -14634,8 +14634,8 @@ render();
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" id="three-cdn" async></script>
 <script>
 /* =====================================================================
-   MAPA 3D — Capítulo 1 (Rio de Janeiro)
-   Cidade isométrica em Three.js no lugar do mapa pintado, só no Capítulo 1.
+   MAPA 3D — Capítulos 1 a 6 (Rio de Janeiro)
+   Cidade isométrica em Three.js no lugar do mapa pintado do Rio.
    Sem WebGL, sem Three.js (offline) ou com "Mapa clássico" escolhido, o jogo
    cai no mapa pintado de sempre. O motor do jogo não muda: o clique num local
    anda com o Vincent até lá e no fim chama enterLocation(), como travelTo().
@@ -14654,8 +14654,8 @@ function webglOk(){
 }
 const mapa3d={
   falhou:false,
-  usar(){ return S && S.season===1 && !lerPref() && !this.falhou && typeof THREE!=='undefined' && webglOk(); },
-  possivel(){ return S && S.season===1 && !this.falhou && typeof THREE!=='undefined' && webglOk(); },
+  usar(){ return S && S.season>=1 && S.season<=6 && !lerPref() && !this.falhou && typeof THREE!=='undefined' && webglOk(); },
+  possivel(){ return S && S.season>=1 && S.season<=6 && !this.falhou && typeof THREE!=='undefined' && webglOk(); },
   slot(){ return `<div class="map-wrap mapa3d-slot" id="mapa3d-slot"></div>`; }
 };
 window.mapa3d=mapa3d;
@@ -14694,11 +14694,42 @@ const LUGARES={
   hangar:  {x:55,z:4,  alt:1.1, cor:0x7c7f80, tipo:'hangar'},
   solar:   {x:65,z:33, alt:1.4, cor:0xd8cbb2, tipo:'solar',  barca:true},
   paqueta: {x:68,z:3,  alt:.9,  cor:0xd9c3a0, tipo:'casa',   barca:true},
-  balsa:   {x:61,z:26, alt:.6,  cor:0x5a4636, tipo:'balsa',  barca:true, naAgua:true}
+  balsa:   {x:61,z:26, alt:.6,  cor:0x5a4636, tipo:'balsa',  barca:true, naAgua:true},
+  // Capítulos 2 e 3
+  municipal:   {x:42,z:19, alt:2.3, tipo:'monumento'},
+  corcovado:   {x:34,z:40, alt:.8,  cor:0xd8cfbd, tipo:'estacao'},
+  outeiro:     {x:44,z:29, alt:1,   cor:0xf0ebe0, tipo:'igreja'},
+  chopin:      {x:46,z:55, alt:3.5, cor:0xb9ad98},
+  santa_teresa:{x:38,z:28, alt:.9,  cor:0xe0b83c, tipo:'galpao'},
+  pier_maua:   {x:42,z:6,  alt:.8,  cor:0x7c7f80, tipo:'galpao'},
+  // Capítulo 4
+  bardana:     {x:4, z:52, alt:2.5, cor:0xa0a09a, tipo:'obra'},
+  yamamoto:    {x:40,z:20, alt:3,   cor:0x4d5f6c},
+  supermercado:{x:14,z:8,  alt:1,   cor:0x8f8a80, tipo:'galpao'},
+  caixa:       {x:43,z:17, alt:2.5, cor:0x2f5a8a},
+  // Capítulos 5 e 6
+  urca:        {x:51,z:42, alt:1.2, cor:0xf0ebe0, tipo:'solar'},
+  ipanema:     {x:34,z:57, alt:1.6, cor:0xd9d2c0},
+  ufrj:        {x:40,z:17, alt:2,   cor:0xb9ad98},
+  'leilao@s6': {x:27,z:57, alt:1.8, cor:0xc9a86a},
+  mam:         {x:44,z:28, alt:.8,  cor:0xd8d2c4, tipo:'mam'},
+  copacabana:  {x:47,z:52, alt:1.8, tipo:'monumento'},
+  lapa:        {x:41,z:25, alt:1.4, cor:0x6b3b2c},
+  petropolis:  {x:4, z:3,  alt:1.6, cor:0x8a7a6a, tipo:'castelo'}
 };
+/* O mesmo id do jogo pode ser outro lugar em outro capítulo (o leilão do
+   Cap. 1 fica em Ipanema; o dos Caps. 5–6, no Leblon): "id@grupo" sobrepõe. */
+const grupoDe=(s)=> s===1?'s1' : s<=3?'s2' : s===4?'s4' : 's6';
+const chaveEm=(id,g)=> LUGARES[id+'@'+g] ? id+'@'+g : id;
+const chave=(id)=> id.indexOf('@')>=0 ? id : chaveEm(id, grupoDe(S.season));
+const idDoJogo=(k)=> k.split('@')[0];
 const RAIO={x:38,z:34,rx:22,rz:30,aviso:3};
-function distBorda(x,z){ const dx=x-RAIO.x, dz=z-RAIO.z, r=Math.hypot(dx,dz)||1e-6;
+function distElipse(x,z){ const dx=x-RAIO.x, dz=z-RAIO.z, r=Math.hypot(dx,dz)||1e-6;
   return 1/Math.sqrt((dx/r/RAIO.rx)**2+(dz/r/RAIO.rz)**2)-r; }
+/* Local que o jogo dá como "fora do raio" mas cai dentro da elipse (ex.: os
+   trilhos do Corcovado) ganha uma área restrita própria, com cerca vermelha. */
+let exclusoes=[];
+function distBorda(x,z){ let d=distElipse(x,z); for(const e of exclusoes) d=Math.min(d, Math.hypot(x-e.x,z-e.z)-e.r); return d; }
 
 function construir(){
   let semente=1957; const rnd=()=>{ semente=(semente*1664525+1013904223)%4294967296; return semente/4294967296; };
@@ -14747,7 +14778,7 @@ function construir(){
   // portas, cais da Praça XV e caminhos (túneis e pontes onde precisar)
   const porta=(x0,z0)=>{ for(const [dx,dz] of [[0,1],[1,0],[-1,0],[0,-1],[1,1],[-1,1]]){ const x=x0+dx,z=z0+dz; if(tiles[z][x]==='rua') return [x,z]; }
     for(const [dx,dz] of [[0,1],[1,0],[-1,0],[0,-1]]){ const x=x0+dx,z=z0+dz; if(tiles[z][x]==='terra' && !bloqueio[z][x]){ tiles[z][x]='rua'; return [x,z]; } } return [x0,z0+1]; };
-  const portas={}; ['apto','pf','atelie','bar','galeria','leilao','cartorio','hangar'].forEach(id=>{ portas[id]=porta(LUGARES[id].x,LUGARES[id].z); });
+  const portas={}; terrestres.filter(k=>!LUGARES[k].barca).forEach(k=>{ portas[k]=porta(LUGARES[k].x,LUGARES[k].z); });
   // cais das barcas: rua da orla do Centro com água ao lado, perto da Praça XV
   let cais=null, doca=null, md=1e9;
   for(let z=14;z<=20;z++) for(let x=42;x<=47;x++){ if(T(x,z)==='agua') continue; const viz=[[1,0],[0,1],[0,-1]].map(([a,b])=>[x+a,z+b]).find(([a,b])=>T(a,b)==='agua');
@@ -14768,9 +14799,12 @@ function construir(){
     let k=kb; while(k!==-1){ const x=k%W, z=(k/W)|0, t=tiles[z][x];
       if(t==='terra'||t==='praia') tiles[z][x]='rua'; else if(t==='morro') tiles[z][x]='tunel'; else if(t==='agua') tiles[z][x]='ponte'; k=prev[k]; }
   }
-  // liga todo par de destinos (e o cais): a rua só é aberta onde encurta muito o caminho
-  const nos=Object.keys(portas).map(id=>portas[id]).concat([cais]);
-  for(let a=0;a<nos.length;a++) for(let b=a+1;b<nos.length;b++) cavar(nos[a],nos[b]);
+  // liga os destinos de cada capítulo entre si e ao cais: a rua só é aberta onde encurta muito o caminho
+  const GRUPOS={s1:LOCS, s2:LOCS_S2, s4:LOCS_S4, s6:LOCS_S6};
+  Object.keys(GRUPOS).forEach(g=>{
+    const nos=Object.keys(GRUPOS[g]).map(id=>chaveEm(id,g)).filter(k=>portas[k]).map(k=>portas[k]).concat([cais]);
+    for(let a=0;a<nos.length;a++) for(let b=a+1;b<nos.length;b++) cavar(nos[a],nos[b]);
+  });
   const anda=(x,z)=>{ const t=T(x,z); return t==='rua'||t==='tunel'||t==='ponte'; };
   // docas das barcas: água ao lado de cada destino de barca
   const docas={};
@@ -15013,17 +15047,37 @@ function montarMundo(){
       const cab=new THREE.Mesh(new THREE.BoxGeometry(.7,.5,.7),mat(0xd8d0c0)); cab.position.set(0,.5,.5); corpo.add(cab); brilhoFixo(l.x+.5,1,l.z+.5,1.4,0xfff0c0,.55); }
     else if(l.tipo==='solar'){ corpo=new THREE.Group(); const c=new THREE.Mesh(new THREE.BoxGeometry(.95,.8,.8),mat(l.cor)); c.position.y=.4; corpo.add(c);
       const tel=new THREE.Mesh(new THREE.ConeGeometry(.75,.45,4),mat(0x9a4a2a)); tel.position.y=1.02; tel.rotation.y=Math.PI/4; corpo.add(tel); }
+    else if(l.tipo==='monumento'){ corpo=new THREE.Group(); }   // o próprio monumento (Theatro Municipal, Copacabana Palace) é o local
+    else if(l.tipo==='igreja'){ corpo=new THREE.Group(); const n=new THREE.Mesh(new THREE.BoxGeometry(.5,.55,.9),mat(l.cor)); n.position.y=.28; corpo.add(n);
+      const tr=new THREE.Mesh(new THREE.BoxGeometry(.3,.95,.3),mat(l.cor)); tr.position.set(0,.48,-.45); corpo.add(tr);
+      const cp=new THREE.Mesh(new THREE.ConeGeometry(.2,.35,4),mat(0x5a6a72)); cp.position.set(0,1.12,-.45); cp.rotation.y=Math.PI/4; corpo.add(cp); }
+    else if(l.tipo==='estacao'){ corpo=new THREE.Group(); const c=new THREE.Mesh(new THREE.BoxGeometry(.9,.55,.6),mat(l.cor)); c.position.y=.28; corpo.add(c);
+      const tl=new THREE.Mesh(new THREE.BoxGeometry(1,.08,.7),mat(0x6a4a3a)); tl.position.y=.6; corpo.add(tl);
+      const tr=new THREE.Mesh(new THREE.BoxGeometry(.5,.25,.25),mat(0xd84a3a)); tr.position.set(.25,.12,.5); corpo.add(tr); }
+    else if(l.tipo==='galpao'){ corpo=new THREE.Group(); const c=new THREE.Mesh(new THREE.BoxGeometry(.95,.6,.9),mat(l.cor)); c.position.y=.3; corpo.add(c);
+      const tel=new THREE.Mesh(new THREE.CylinderGeometry(.46,.46,.95,10,1,false,0,Math.PI),mat(0x5d5a55)); tel.rotation.z=Math.PI/2; tel.rotation.y=Math.PI/2; tel.position.y=.6; tel.scale.set(1,1,.6); corpo.add(tel); }
+    else if(l.tipo==='obra'){ corpo=new THREE.Group(); const cz=mat(l.cor);
+      for(let a=0;a<3;a++){ const lj=new THREE.Mesh(new THREE.BoxGeometry(.9,.06,.9),cz); lj.position.y=.4+a*.55; corpo.add(lj); }
+      for(const [a,b] of [[-.4,-.4],[.4,-.4],[-.4,.4],[.4,.4]]){ const pl=new THREE.Mesh(new THREE.BoxGeometry(.08,1.5,.08),cz); pl.position.set(a,.75,b); corpo.add(pl); }
+      const gr=new THREE.Mesh(new THREE.BoxGeometry(.06,2.4,.06),mat(0xe0b83c)); gr.position.set(.55,1.2,.55); corpo.add(gr);
+      const br=new THREE.Mesh(new THREE.BoxGeometry(1.4,.06,.06),mat(0xe0b83c)); br.position.set(.2,2.35,.55); corpo.add(br); }
+    else if(l.tipo==='mam'){ corpo=new THREE.Group(); const c=new THREE.Mesh(new THREE.BoxGeometry(1.6,.35,.7),mat(l.cor)); c.position.y=.55; corpo.add(c);
+      for(let k=0;k<5;k++){ const p=new THREE.Mesh(new THREE.BoxGeometry(.06,.4,.7),mat(0xb8b2a4)); p.position.set(-.72+k*.36,.2,0); p.rotation.z=(k%2?.35:-.35); corpo.add(p); } }
+    else if(l.tipo==='castelo'){ corpo=new THREE.Group(); const c=new THREE.Mesh(new THREE.BoxGeometry(.8,.8,.7),mat(l.cor)); c.position.y=.4; corpo.add(c);
+      for(const [a,b] of [[-.42,-.35],[.42,-.35],[-.42,.35],[.42,.35]]){ const tr=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,1.2,8),mat(l.cor)); tr.position.set(a,.6,b); corpo.add(tr);
+        const ct=new THREE.Mesh(new THREE.ConeGeometry(.18,.35,8),mat(0x4a3a5a)); ct.position.set(a,1.37,b); corpo.add(ct); } }
     else { const est=l.tipo==='bar'?'creme':id==='galeria'?'residencial':l.tipo==='casa'?'casa':'antigo';
       corpo=new THREE.Mesh(geoPredio(Math.round(l.alt*2)),matsPredio[est].clone()); corpo.material.color.setHex(l.cor); corpo.scale.set(.92,1,.92); }
     corpo.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; o.userData.loc=id; clicaveis.push(o); } });
     g.add(corpo);
     if(l.tipo==='bar'){ const ne=new THREE.Mesh(new THREE.BoxGeometry(.7,.16,.04),new THREE.MeshBasicMaterial({color:0xff4d3a})); ne.position.set(0,.75,.48); g.add(ne); brilhoFixo(l.x+.5,yb+.95,l.z+1,2,0xff4d3a,.6); }
-    const topoM= l.tipo==='hangar'?1.1 : l.tipo==='balsa'?.8 : l.tipo==='solar'?1.2 : l.tipo==='pf'?l.alt+.2 : Math.round(l.alt*2)*.5;
+    const topoM= l.tipo==='hangar'?1.1 : l.tipo==='balsa'?.8 : l.tipo==='solar'?1.2 : l.tipo==='pf'?l.alt+.2 : l.tipo==='monumento'?l.alt :
+      l.tipo==='igreja'?1.3 : l.tipo==='estacao'?.7 : l.tipo==='galpao'?1 : l.tipo==='obra'?2.4 : l.tipo==='mam'?.8 : l.tipo==='castelo'?1.55 : Math.round(l.alt*2)*.5;
     const med=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false,toneMapped:false}));
     med.scale.set(1.9,1.9,1); med.position.y=topoM+1.7; med.renderOrder=10; med.userData.loc=id; clicaveis.push(med); g.add(med);
     const haste=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1,4),new THREE.MeshBasicMaterial({color:0xb98f2f})); haste.position.y=topoM+.55; g.add(haste);
     const halo=new THREE.Mesh(new THREE.RingGeometry(1.05,1.25,48),new THREE.MeshBasicMaterial({color:0xd8b45a,transparent:true,opacity:.85,side:THREE.DoubleSide,depthWrite:false,toneMapped:false}));
-    halo.rotation.x=-Math.PI/2; halo.position.y=.03; g.add(halo);
+    halo.rotation.x=-Math.PI/2; halo.position.y=.03; if(l.tipo==='monumento') halo.scale.set(1.6,1.6,1.6); g.add(halo);
     const br=addBrilho(l.x+.5,yb+med.position.y+.24,l.z+.5,3.2,0xffd27a,0);
     scene.add(g); marcos[id]={grupo:g,med,halo,brilho:br,baseY:med.position.y,texs:{}};
   });
@@ -15065,6 +15119,10 @@ function montarMundo(){
   const linha=new THREE.Mesh(new THREE.RingGeometry(1-.12/RAIO.rz,1+.12/RAIO.rz,192),matLinha); linha.scale.set(RAIO.rx,RAIO.rz,1); linha.rotation.x=-Math.PI/2; linha.position.set(RAIO.x,.36,RAIO.z); scene.add(linha);
   const matAviso=new THREE.MeshBasicMaterial({color:0xc98b3a,transparent:true,opacity:.1,side:THREE.DoubleSide,depthWrite:false,toneMapped:false});
   const faixa=new THREE.Mesh(new THREE.RingGeometry(1-RAIO.aviso/RAIO.rz,1,192),matAviso); faixa.scale.set(RAIO.rx,RAIO.rz,1); faixa.rotation.x=-Math.PI/2; faixa.position.set(RAIO.x,.34,RAIO.z); scene.add(faixa);
+  const matRestrita=new THREE.MeshBasicMaterial({map:texCerca,color:0xff3a2a,transparent:true,opacity:.45,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
+  const restritas=[0,1,2].map(()=>{ const g=new THREE.Group(); const c=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1.4,64,1,true),matRestrita); c.position.y=.95; g.add(c);
+    const r=new THREE.Mesh(new THREE.RingGeometry(.95,1,64),new THREE.MeshBasicMaterial({color:0xff3a2a,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false,toneMapped:false})); r.rotation.x=-Math.PI/2; r.position.y=.4; g.add(r);
+    g.visible=false; scene.add(g); return g; });
   const pulsos=[0,1,2].map(k=>{ const m=new THREE.Mesh(new THREE.RingGeometry(.9,1,48),new THREE.MeshBasicMaterial({color:0xff3a2a,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false,toneMapped:false}));
     m.rotation.x=-Math.PI/2; m.userData.k=k; scene.add(m); return m; });
 
@@ -15090,7 +15148,7 @@ function montarMundo(){
   const luzesCarros=pontosDe(carros.flatMap(()=>[[0,0,0,.9,0xfff2c0,.6],[0,0,0,.6,0xff3020,.5]]));
   luzesCarros.geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
   return {G,cont,canvas,renderer,luzesFixas,luzesCarros,imCarro,imCabine,scene,cam,hemi,sol,ceuNoite,ceuDia,ceuTarde,matsPredio,matBarraco,matAgua,matCristo,aguaPos,aguaBase,espuma,brilhos,rotulos,
-    marcos,clicaveis,carros,barcos,barca,luzBarca,vincent,pE,pD,tornoz,anel,luzTornoz,matCerca,matLinha,matAviso,cerca,linha,faixa,pulsos,bondinhos,caboPts,bondeArcos,
+    marcos,clicaveis,carros,barcos,barca,luzBarca,restritas,matRestrita,vincent,pE,pD,tornoz,anel,luzTornoz,matCerca,matLinha,matAviso,cerca,linha,faixa,pulsos,bondinhos,caboPts,bondeArcos,
     texMedalhao,topo,addBrilho};
 }
 
@@ -15099,7 +15157,7 @@ const DIRS4=[[1,0],[-1,0],[0,1],[0,-1]];
 const st={alvo:null, alvoSuave:null, az:Math.PI*.2, azAlvo:Math.PI*.2, zoom:1.15, zoomAlvo:1.15, seguir:true,
   pos:{x:0,z:0}, pernas:[], ativo:false, raf:0, nomes:true, viagem:null, ultimoT:0, tz:'dentro'};
 function posicaoDe(id){
-  const l=LUGARES[id]; if(!l) return null;
+  id=chave(id); const l=LUGARES[id]; if(!l) return null;
   if(l.barca){ const d=M.G.docas[id]; if(l.naAgua) return {x:l.x, z:l.z, agua:true};
     // em terra, ao lado da doca
     let best=[l.x,l.z], bd=1e9; for(const [a,b] of DIRS4.concat([[1,1],[-1,1],[1,-1],[-1,-1]])){ const x=l.x+a, z=l.z+b; if(M.G.T(x,z)==='agua') continue;
@@ -15123,6 +15181,7 @@ function rotaAgua(a,b){   // BFS na água e depois "puxa o fio" para a barca nã
   const out=[cru[0]]; let i=0; while(i<cru.length-1){ let j=cru.length-1; while(j>i+1 && !livre(cru[i],cru[j])) j--; out.push(cru[j]); i=j; } return out;
 }
 function planejar(de, para){
+  de=chave(de); para=chave(para);
   const A=LUGARES[de], B=LUGARES[para]; const pA=posicaoDe(de)||posicaoDe('apto'), pB=posicaoDe(para);
   const pernas=[], G=M.G;
   const cais=G.cais, doca=G.doca;
@@ -15140,7 +15199,7 @@ function planejar(de, para){
 /* --- integração com o jogo --- */
 function visiveis(){
   const out=[]; const A=getActiveLocs();
-  for(const id in A){ const l=A[id]; if(l.caso && l.caso!==S.caso) continue; if(l.reqFlag && !S.flags[l.reqFlag]) continue; if(LUGARES[id]) out.push(id); }
+  for(const id in A){ const l=A[id]; if(l.caso && l.caso!==S.caso) continue; if(l.reqFlag && !S.flags[l.reqFlag]) continue; const k=chave(id); if(LUGARES[k]) out.push(k); }
   return out;
 }
 function texDoMarco(id, glifo, fora){ const m=M.marcos[id]; const k=glifo+(fora?'f':'d'); if(!m.texs[k]) m.texs[k]=M.texMedalhao(glifo,fora); return m.texs[k]; }
@@ -15148,12 +15207,15 @@ function sincronizar(){
   const vis=new Set(visiveis()); const A=getActiveLocs();
   Object.keys(M.marcos).forEach(id=>{ const mc=M.marcos[id], on=vis.has(id); mc.grupo.visible=on;
     if(!on){ mc.brilho.userData.op=0; return; }
-    const l=A[id], fora= l.zone==='fora' && temTornozeleira(), viva=hasNewSceneNow(id);
+    const gid=idDoJogo(id), l=A[gid], fora= l.zone==='fora' && temTornozeleira(), viva=hasNewSceneNow(gid);
     mc.med.material.map=texDoMarco(id,l.g,fora); mc.med.material.needsUpdate=true;
     mc.halo.visible=viva; mc.halo.material.color.setHex(fora?0xbe4a33:0xd8b45a);
     mc.brilho.material.color.setHex(fora?0xff7a5a:0xffd27a); mc.brilho.userData.op= viva?.55:0;
     mc.nome=l.name; });
   const tz=temTornozeleira(); M.cerca.visible=M.linha.visible=M.faixa.visible=tz; M.cont.querySelector('.m3d-tz').hidden=!tz;
+  exclusoes=[];
+  if(tz) vis.forEach(k=>{ const l=LUGARES[k], g=A[idDoJogo(k)]; if(g && g.zone==='fora' && distElipse(l.x+.5,l.z+.5)>-.5) exclusoes.push({x:l.x+.5, z:l.z+.5, r:2.4}); });
+  M.restritas.forEach((r,i)=>{ const e=exclusoes[i]; r.visible=!!e; if(e){ r.position.set(e.x,0,e.z); r.scale.set(e.r,1,e.r); } });
   if(!st.viagem){ const p=posicaoDe(S.loc)||posicaoDe('apto'); st.pos={x:p.x,z:p.z}; st.naAgua=!!p.agua; if(st.seguir || !st.alvo) st.alvo=new THREE.Vector3(p.x+.5,0,p.z+.5); }
   if(!st.alvoSuave){ st.alvoSuave=st.alvo.clone(); }
 }
@@ -15274,6 +15336,7 @@ function tornozeleira(t,emTunel){
   M.tornoz.material.color.setHex(aceso?corLed:0x221510); M.luzTornoz.material.color.setHex(corLed); M.luzTornoz.userData.op=0; M.luzTornoz.material.opacity= emTunel?0:(aceso?.95:.15);
   const pulso=.5+.5*Math.sin(t*(est==='fora'?7:3)), corC= est==='fora'?0xff3a2a:est==='borda'?0xffa040:0xd8b45a;
   M.matCerca.color.setHex(corC); M.matLinha.color.setHex(corC);
+  M.matRestrita.opacity=.35+.25*pulso;
   M.matCerca.opacity= est==='dentro'?.2:est==='borda'?.32+.2*pulso:.45+.35*pulso; M.matLinha.opacity= est==='dentro'?.5:.75+.25*pulso; M.matAviso.opacity= est==='dentro'?.07:.15+.1*pulso;
   M.pulsos.forEach(m=>{ if(est!=='fora'||emTunel){ m.material.opacity=0; return; } const k=((t*.8+m.userData.k/3)%1); m.position.set(st.pos.x+.5,.4,st.pos.z+.5); m.scale.setScalar(.5+k*5); m.material.opacity=(1-k)*.8; });
   M.cont.querySelector('.m3d-vinheta').style.opacity= est==='fora'?String(.5+.3*pulso):est==='borda'?'.15':'0';
