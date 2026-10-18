@@ -771,6 +771,99 @@ body.mj-aberto{overflow:hidden}
   #mesa-root .mp-meter b,#forja-root .f-meter b,#op-root .op-meter b{white-space:normal;font-size:15px}
   #mesa-root .mp-meter i,#forja-root .f-meter i,#op-root .op-meter i{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.06em} }
 .choice-btn.plano-btn::before{content:none}
+
+/* ============ PROVAS: FICHAS E MOCHILA ============ */
+.mh-mochila{position:relative}
+.mh-qtd{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#d8b45a;color:#14100c;font:700 .7rem/18px var(--serif);text-align:center;box-shadow:0 0 0 2px #0a1216;animation:hudPisca 2s ease-in-out 3}
+.prova-ficha{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;margin:0;padding:0;overflow:hidden;cursor:pointer;
+  font-variant:normal;letter-spacing:0;border-radius:5px;border:1px solid rgba(0,0,0,.18);color:#2a2018;
+  background:linear-gradient(170deg,#fbf3df,#ecdcb4);box-shadow:0 2px 0 rgba(255,255,255,.5) inset,0 3px 10px rgba(0,0,0,.28);transition:transform .14s,box-shadow .14s}
+.prova-ficha:hover,.prova-ficha:focus-visible{transform:translateY(-2px);color:#2a2018;border-color:var(--pc);box-shadow:0 0 0 1px var(--pc),0 8px 18px rgba(0,0,0,.35)}
+.prova-ficha.sel{box-shadow:0 0 0 2px var(--pc),0 8px 18px rgba(0,0,0,.35)}
+.pf-faixa{display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--pc);color:#fff7e6}
+.pf-ico{display:inline-flex}
+.pf-tipo{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-cap{font-size:.68rem;opacity:.85;white-space:nowrap}
+.pf-nome{display:block;padding:9px 10px 2px;font-size:.95rem;font-weight:600;line-height:1.25}
+.pf-sub{display:block;padding:0 10px;font-size:.8rem;font-style:italic;color:#6b5b45;line-height:1.3}
+.prova-ficha>.pf-nome:last-child{margin-bottom:10px}
+.pf-nova{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:#be4a33;padding:1px 6px;border-radius:3px}
+.prova-ficha .pf-sub{padding-bottom:10px}
+.prova-chip{display:inline-flex;align-items:center;gap:6px;margin:4px 6px 0 0;padding:4px 9px;border-radius:999px;font-variant:normal;letter-spacing:.01em;font-size:.76rem;
+  color:#e8dcc0;border:1px solid color-mix(in srgb,var(--pc,#b98f2f) 60%,transparent);background:color-mix(in srgb,var(--pc,#b98f2f) 18%,rgba(0,0,0,.3))}
+.prova-chip svg{color:color-mix(in srgb,var(--pc) 45%,#fff)}
+.prova-chip span{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prova-chip.mo-abrir{--pc:#b98f2f;color:var(--brassL)}
+.evd-btn::before{content:none}
+.evd-btn{padding-left:14px;display:flex;align-items:center;gap:9px}
+.evd-btn-ico{flex:0 0 28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff7e6;background:var(--pc)}
+
+/* aviso de prova obtida */
+.evd-modal.evd-nova{max-width:400px;padding:22px 24px 20px}
+.evd-nova .evd-modal-title{font-family:var(--titulo);font-size:1.15rem;letter-spacing:.2em;margin-bottom:12px}
+.evd-ficha{border-radius:6px;overflow:hidden;background:#fffaf0;border:1px solid var(--pc);box-shadow:0 8px 20px rgba(0,0,0,.25);animation:evdFicha .5s cubic-bezier(.2,.9,.3,1.2) both}
+.evd-ficha-ico{display:flex;justify-content:center;padding:16px 0 12px;color:#fff7e6;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--pc) 70%,#fff),var(--pc))}
+.evd-ficha-tipo{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--pc);margin-top:10px;font-weight:600}
+.evd-ficha .evd-modal-name{font-style:normal;font-weight:600;font-size:1.05rem;padding:2px 14px 0;line-height:1.3}
+.evd-ficha-sub{font-style:italic;font-size:.86rem;color:#6b5b45;padding:2px 14px 14px}
+.evd-ficha .evd-modal-name:last-child{padding-bottom:14px}
+.evd-guardada{display:flex;align-items:center;justify-content:center;gap:6px;margin:14px 0 0;font-size:.82rem;color:#6b5b45}
+.evd-acoes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.evd-acoes .evd-modal-btn{margin:0}
+.sidebtn.evd-ver{margin:0;color:#6b5b45;border-color:rgba(107,85,39,.45);padding:9px 14px;font-size:.82rem}
+.sidebtn.evd-ver:hover{color:#2a2018;border-color:var(--brassD)}
+@keyframes evdFicha{from{opacity:0;transform:translateY(14px) rotate(-3deg) scale(.92)}to{opacity:1;transform:none}}
+
+/* mochila */
+#mochila{position:fixed;inset:0;z-index:610;display:flex;align-items:center;justify-content:center;padding:14px}
+#mochila .mj-fundo{position:absolute;inset:0;background:rgba(4,8,10,.72);opacity:0;transition:opacity .2s}
+#mochila.on .mj-fundo{opacity:1}
+.mo-caixa{position:relative;width:min(1000px,100%);height:min(720px,100%);display:flex;flex-direction:column;border-radius:8px;overflow:hidden;
+  background:linear-gradient(180deg,#152530,#0b1418);border:1px solid rgba(185,143,47,.45);box-shadow:0 24px 60px rgba(0,0,0,.6);color:var(--paper);
+  transform:translateY(16px) scale(.98);opacity:0;transition:transform .22s cubic-bezier(.2,.7,.3,1),opacity .2s}
+#mochila.on .mo-caixa{transform:none;opacity:1}
+.mo-topo{display:grid;grid-template-columns:1fr auto;align-items:center;padding:14px 18px 8px}
+.mo-titulo{display:inline-flex;align-items:center;gap:10px;color:var(--brassL)} .mo-titulo svg{width:22px;height:22px}
+.mo-titulo b{font-family:var(--titulo);font-size:1.3rem;letter-spacing:.24em}
+.mo-sub{grid-row:2;font-size:.8rem;color:#9a8f78}
+.mo-topo .mj-x{grid-row:1/3;grid-column:2;background:none;border:1px solid #3a3428;color:var(--paper);width:34px;height:34px;cursor:pointer;border-radius:3px}
+.mo-abas{display:flex;gap:4px;padding:0 18px;border-bottom:1px solid rgba(185,143,47,.25)}
+.mo-abas button{font:500 .9rem var(--serif);padding:9px 14px;border:1px solid transparent;border-bottom:0;border-radius:5px 5px 0 0;background:none;color:#9a8f78;cursor:pointer}
+.mo-abas button em{font-style:normal;font-size:.72rem;padding:0 6px;border-radius:9px;background:rgba(255,255,255,.08);margin-left:4px}
+.mo-abas button[aria-selected="true"]{color:#fff2cc;background:rgba(185,143,47,.12);border-color:rgba(185,143,47,.35)}
+.mo-corpo{flex:1;min-height:0;display:flex}
+.mo-lista{flex:1;min-width:0;overflow:auto;padding:14px 18px 20px}
+.mo-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.mo-f{display:inline-flex;align-items:center;gap:5px;font:.8rem var(--serif);padding:4px 10px;border-radius:999px;cursor:pointer;color:#d6c9a8;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12)}
+.mo-f.on{color:#fff6e0;border-color:var(--pc,#d8b45a);background:color-mix(in srgb,var(--pc,#b98f2f) 30%,transparent)}
+.mo-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.mo-cap{font-family:var(--titulo);font-weight:500;color:var(--brassL);letter-spacing:.18em;margin:16px 0 8px;font-size:.9rem;display:flex;gap:8px;align-items:center}
+.mo-cap:first-child{margin-top:0} .mo-cap span{font-family:var(--serif);font-size:.72rem;color:#9a8f78;letter-spacing:0}
+.mo-vazio{color:#9a8f78;font-style:italic}
+.mo-det{flex:0 0 320px;overflow:auto;padding:18px;border-left:1px solid rgba(185,143,47,.25);background:linear-gradient(180deg,#f5ead0,#e8d6ad);color:#2a2018;text-align:center}
+.mo-voltar{display:none;background:none;border:0;color:#6b5b45;font:.85rem var(--serif);cursor:pointer;margin-bottom:8px}
+.mo-det-ico{width:96px;height:96px;margin:4px auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff7e6;
+  background:radial-gradient(circle at 40% 35%,color-mix(in srgb,var(--pc) 65%,#fff),var(--pc));box-shadow:0 8px 20px rgba(0,0,0,.25),0 0 0 4px rgba(255,255,255,.6)}
+.mo-det-tipo{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--pc);font-weight:600}
+.mo-det h3{margin:6px 0 4px;font-size:1.2rem;line-height:1.3}
+.mo-det-sub{margin:0 0 12px;font-style:italic;color:#6b5b45}
+.mo-det dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;text-align:left;margin:14px 0;padding:12px 0;border-top:1px solid rgba(107,85,39,.3);border-bottom:1px solid rgba(107,85,39,.3);font-size:.86rem}
+.mo-det dt{color:#8a7a5a;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding-top:2px}
+.mo-det dd{margin:0} .mo-det code{font-size:.78rem;color:#6b5b45}
+.mo-det-nota{font-size:.82rem;color:#6b5b45;font-style:italic;text-align:left}
+.mo-perts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.mo-pert{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:6px;background:rgba(0,0,0,.25);border:1px solid rgba(185,143,47,.2)}
+.mo-pert-ico{flex:0 0 40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(185,143,47,.5);color:var(--brassL);font-size:.95rem}
+.mo-pert i{display:block;font-style:normal;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:#9a8f78}
+.mo-pert b{display:block;font-size:1.05rem;font-weight:600;color:#f6ecd4}
+.mo-pert small{display:block;font-size:.78rem;color:#9a8f78;margin-top:2px}
+@media (max-width:720px){
+  #mochila{padding:0} .mo-caixa{height:100%;border-radius:0}
+  .mo-grade{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px} .pf-tipo{letter-spacing:.04em;font-size:.64rem} .pf-faixa{gap:5px;padding:6px 7px}
+  .mo-caixa.com-det .mo-lista{display:none} .mo-det{flex:1;border-left:0} .mo-voltar{display:inline-block}
+  .mo-abas{overflow-x:auto} .mo-abas button{white-space:nowrap;padding:8px 10px}
+}
+@media (prefers-reduced-motion: reduce){ .evd-ficha,.mh-qtd{animation:none} .mo-caixa{transition:none} }
 </style>
 </head>
 <body>
@@ -894,16 +987,17 @@ window.closeEvidencePopup = function(){
 };
 function renderEvidencePopup(){
   if(!evidencePopupQueue.length) return "";
-  const id = evidencePopupQueue[0];
-  const texto = EVID[id] || id;
+  registrarProvas();
+  const id = evidencePopupQueue[0], tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id);
+  const noCaso=(S.evidence||[]).filter(evidenceScopeForSeason(S.season)).length;
   return `<div class="evd-overlay" onclick="if(event.target===this) window.closeEvidencePopup()">
-   <div class="evd-modal">
-    <div class="evd-seal">⌗</div>
-    <div class="evd-modal-orn">◆ ◆ ◆</div>
-    <div class="evd-modal-title">Prova Obtida</div>
-    <div class="evd-modal-name">${texto}</div>
-    <div class="evd-modal-orn">◆ ◆ ◆</div>
-    <button class="choice-btn evd-modal-btn" onclick="window.closeEvidencePopup()">Fechar</button>
+   <div class="evd-modal evd-nova" style="--pc:${T.cor}" role="dialog" aria-label="Prova obtida">
+    <div class="evd-modal-title">Prova obtida</div>
+    <div class="evd-ficha"><div class="evd-ficha-ico">${icoProva(tipo,40)}</div><div class="evd-ficha-tipo">${T.nome}</div>
+     <div class="evd-modal-name">${tit}</div>${sub?`<div class="evd-ficha-sub">${sub}</div>`:''}</div>
+    <p class="evd-guardada">${ICONE_MOCHILA} Guardada na mochila · ${noCaso} prova${noCaso===1?'':'s'} neste caso</p>
+    <div class="evd-acoes"><button class="choice-btn evd-modal-btn" onclick="window.closeEvidencePopup()">Continuar</button>
+     <button class="sidebtn evd-ver" onclick="window.closeEvidencePopup();abrirMochila('${id}')">Ver na mochila</button></div>
    </div>
   </div>`;
 }
@@ -2721,6 +2815,7 @@ function shell(inner){
    ${capa?'':`<div class="mh-marca"><div class="mh-line"><span class="mh-d">◆</span><h1>Condicional</h1><span class="mh-d">◆</span></div>
    <div class="mh-sub">${caseTitle()}${S.modo?` · Modo ${S.modo==='campanha'?'Campanha':'Difícil'}`:''}</div></div>`}
    <nav class="mh-acoes" aria-label="Jogo">
+    ${capa||!S.flags.prologueDone?'':`<button class="sidebtn mh-btn mh-mochila" type="button" onclick="abrirMochila()" aria-label="Mochila${provasNovas()?' — '+provasNovas()+' prova(s) nova(s)':''}">${ICONE_MOCHILA}<span>Mochila</span>${provasNovas()?`<b class="mh-qtd">${provasNovas()}</b>`:''}</button>`}
     <button class="sidebtn mh-btn" type="button" onclick="abrirMenu()" aria-haspopup="dialog">${ICONE_MENU}<span>Menu</span></button>
     <button class="sidebtn mh-btn" type="button" onclick="telaCheia()" title="Tela cheia" aria-label="Tela cheia">${ICONE_TELA}</button>
    </nav>
@@ -2781,9 +2876,9 @@ function evidenceScopeForSeason(season){
 function renderFooter(){
   const scope = evidenceScopeForSeason(S.season);
   const visible = S.evidence.filter(scope);
-  const acervoHtml = visible.length ? visible.map(e=>`<span class="badge">${EVID[e]}</span>`).join("") : "<em>nenhuma evidência ainda</em>";
+  const acervoHtml = visible.length ? visible.map(chipProva).join("")+`<button type="button" class="sidebtn prova-chip mo-abrir" onclick="abrirMochila()">Abrir mochila →</button>` : "<em>nenhuma prova ainda</em>";
   if(mode==="modeselect") return "";
-  return `<div class="acervo"><span class="acv-title">Acervo</span>${acervoHtml}${renderConquistas()}</div>`;
+  return `<div class="acervo"><span class="acv-title">Mochila</span>${acervoHtml}${renderConquistas()}</div>`;
 }
 function achievementBlock(id){
   const a = CONQUISTAS[id];
@@ -3070,7 +3165,7 @@ function renderEvidenceJournal(){
    <div class="choices"><button class="choice-btn" onclick="closeEvidenceJournal()">← Voltar</button></div>`;
 }
 let evidenceJournalReturnMode = null;
-window.openEvidenceJournal = function(){ evidenceJournalReturnMode = mode; mode = "evidencias"; render(); };
+window.openEvidenceJournal = function(){ abrirMochila(null,"arquivo"); };
 window.closeEvidenceJournal = function(){ mode = evidenceJournalReturnMode || "map"; render(); };
 
 /* ===================== RECAP DE RETORNO ("onde você parou") ===================== */
@@ -8225,6 +8320,134 @@ const EVID_S12 = {
 };
 Object.assign(EVID, EVID_S2, EVID_S4, EVID_S5, EVID_S6, EVID_S7, EVID_S8, EVID_S9, EVID_S10, EVID_S11, EVID_S12);
 
+/* ===================== PROVAS: FICHAS E MOCHILA =====================
+   Cada prova ganha um tipo (pelo que ela é: papel, laudo, dinheiro, áudio,
+   objeto, arquivo digital), com ícone e cor, e guarda quando e onde foi obtida.
+   A mochila junta as provas do caso, o arquivo dos capítulos e os pertences. */
+const TIPOS_PROVA={
+  audio:     {nome:'Gravação',   cor:'#6E4A7E', ico:'<path d="M4 9v6M8 6v12M12 3v18M16 7v10M20 10v4" stroke-linecap="round"/>'},
+  digital:   {nome:'Digital',    cor:'#39608C', ico:'<rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M9 20h6M12 16v4" stroke-linecap="round"/><path d="M8 9h3M8 12h6" stroke-linecap="round"/>'},
+  laudo:     {nome:'Laudo',      cor:'#2C5A5E', ico:'<circle cx="10" cy="10" r="5.5"/><path d="M14 14l6 6" stroke-linecap="round"/><path d="M8 10h4M10 8v4" stroke-linecap="round"/>'},
+  financeiro:{nome:'Financeiro', cor:'#3d6b3d', ico:'<ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 10v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4M5 14v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4"/>'},
+  objeto:    {nome:'Objeto',     cor:'#9C3B22', ico:'<path d="M7 4h10l4 5-9 11L3 9z" stroke-linejoin="round"/><path d="M3 9h18M9 4l3 16 3-16" stroke-linejoin="round"/>'},
+  documento: {nome:'Documento',  cor:'#8a6f3a', ico:'<path d="M6 3h8l4 4v14H6z" stroke-linejoin="round"/><path d="M14 3v4h4M9 11h6M9 14h6M9 17h4" stroke-linecap="round"/>'}
+};
+function tipoProva(id){
+  const t=(EVID[id]||'').toLowerCase();
+  if(/grava[cç][aã]o|[áa]udio|escuta/.test(t)) return 'audio';
+  if(/log de acesso|nuvem|base de dados|metadados|chip/.test(t)) return 'digital';
+  if(/^laudo|cotejo|amostra|exposto por [áa]cido|digital do|fragmento|secante|solvente/.test(t)) return 'laudo';
+  if(/extrato|planilha|ordem de pagamento|notas fiscais|cont[áa]b|ledger|recibo|cadeia societ|deb[êe]nture|doa[cç][õo]es|suborno|guias alfand/.test(t)) return 'financeiro';
+  if(/r[ée]plica|cristal|matriz|coroa|chapas|brinco|ferramenta|bolsa|selo falso/.test(t)) return 'objeto';
+  return 'documento';
+}
+function partesProva(id){
+  const t=EVID[id]||id; let m=/^(.*?)\s*\((.+)\)\s*$/.exec(t); if(m) return [m[1],m[2]];
+  m=/^(.*?)\s+[—–-]\s+(.+)$/.exec(t); if(m) return [m[1],m[2]];
+  m=/^(.*?):\s+(.+)$/.exec(t); if(m) return [m[1],m[2]];
+  return [t,''];
+}
+function icoProva(tipo,tam){ const T=TIPOS_PROVA[tipo]||TIPOS_PROVA.documento;
+  return `<svg viewBox="0 0 24 24" width="${tam||18}" height="${tam||18}" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${T.ico}</svg>`; }
+/* Anota quando e onde cada prova entrou. Provas de saves antigos ficam sem data (legado). */
+function registrarProvas(){
+  if(!Array.isArray(S.evidence)) return;
+  const legado = !S.provasMeta; S.provasMeta = S.provasMeta || {};
+  S.evidence.forEach(id=>{ if(S.provasMeta[id]) return;
+    const loc = (typeof getActiveLocs==='function' && getActiveLocs()[S.loc]) || LOCS[S.loc] || {};
+    S.provasMeta[id] = legado ? {cap:capituloDaEvidencia(id)||S.season, legado:true}
+      : {cap:capituloDaEvidencia(id)||S.season, caso:S.caso, dia:Math.min(S.day||1,6), per:S.period, loc:loc.name||'', nova:true};
+  });
+}
+function provasNovas(){ const m=S.provasMeta||{}; return (S.evidence||[]).filter(id=>m[id]&&m[id].nova).length; }
+function fichaProva(id,cls){
+  const tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id), meta=(S.provasMeta||{})[id]||{};
+  return `<button type="button" class="sidebtn prova-ficha ${cls||''}" style="--pc:${T.cor}" onclick="abrirMochila('${id}')" aria-label="${T.nome}: ${(EVID[id]||id).replace(/"/g,'&quot;')}">
+    <span class="pf-faixa"><span class="pf-ico">${icoProva(tipo)}</span><span class="pf-tipo">${T.nome}</span>${meta.nova?'<span class="pf-nova">nova</span>':''}<span class="pf-cap">Cap. ${meta.cap||capituloDaEvidencia(id)||'—'}</span></span>
+    <span class="pf-nome">${tit}</span>${sub?`<span class="pf-sub">${sub}</span>`:''}</button>`;
+}
+function chipProva(id){
+  const tipo=tipoProva(id), T=TIPOS_PROVA[tipo];
+  return `<button type="button" class="sidebtn prova-chip" style="--pc:${T.cor}" onclick="abrirMochila('${id}')" title="${(EVID[id]||id).replace(/"/g,'&quot;')}">${icoProva(tipo,14)}<span>${partesProva(id)[0]}</span></button>`;
+}
+
+let mochilaAba='caso', mochilaFiltro='', mochilaSel=null;
+window.abrirMochila = function(id,aba){
+  registrarProvas();
+  if(aba) mochilaAba=aba;
+  if(id){ mochilaSel=id; const naCaso=(S.evidence||[]).filter(evidenceScopeForSeason(S.season)).includes(id); mochilaAba = naCaso?'caso':'arquivo'; mochilaFiltro=''; }
+  let el=document.getElementById('mochila');
+  if(!el){ el=document.createElement('div'); el.id='mochila'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label','Mochila');
+    el.addEventListener('keydown',ev=>{ if(ev.key==='Escape') fecharMochila(); });
+    document.body.appendChild(el); document.body.classList.add('mj-aberto'); requestAnimationFrame(()=>el.classList.add('on')); }
+  desenharMochila();
+};
+window.fecharMochila = function(){
+  const el=document.getElementById('mochila'); if(!el) return; document.body.classList.remove('mj-aberto');
+  el.classList.remove('on'); setTimeout(()=>el.remove(),200);
+  const b=document.querySelector('.mh-mochila'); if(b){ const n=provasNovas(); const q=b.querySelector('.mh-qtd'); if(q){ if(n) q.textContent=n; else q.remove(); } }
+};
+window.mochilaIr = function(aba,filtro){ mochilaAba=aba; if(filtro!==undefined) mochilaFiltro=filtro; mochilaSel=null; desenharMochila(); };
+function desenharMochila(){
+  const el=document.getElementById('mochila'); if(!el) return;
+  const todas=S.evidence||[], doCaso=todas.filter(evidenceScopeForSeason(S.season));
+  if(mochilaSel && S.provasMeta && S.provasMeta[mochilaSel]) S.provasMeta[mochilaSel].nova=false;
+  const abas=[['caso','Provas do caso',doCaso.length],['arquivo','Arquivo',todas.length],['pertences','Pertences','']];
+  let corpo='';
+  if(mochilaAba==='pertences') corpo=pertencesHtml();
+  else {
+    const base = mochilaAba==='caso'?doCaso:todas;
+    const tipos=Object.keys(TIPOS_PROVA).filter(t=>base.some(id=>tipoProva(id)===t));
+    const lista=base.filter(id=>!mochilaFiltro||tipoProva(id)===mochilaFiltro);
+    const filtros = tipos.length>1 ? `<div class="mo-filtros"><button type="button" class="mo-f${mochilaFiltro?'':' on'}" onclick="mochilaIr('${mochilaAba}','')">Todas</button>${tipos.map(t=>`<button type="button" class="mo-f${mochilaFiltro===t?' on':''}" style="--pc:${TIPOS_PROVA[t].cor}" onclick="mochilaIr('${mochilaAba}','${t}')">${icoProva(t,13)} ${TIPOS_PROVA[t].nome}</button>`).join('')}</div>` : '';
+    let grade;
+    if(!lista.length) grade=`<p class="mo-vazio">${base.length?'Nenhuma prova desse tipo.':'Nenhuma prova ainda. Elas aparecem aqui à medida que você as consegue nas cenas, perícias e operações.'}</p>`;
+    else if(mochilaAba==='arquivo'){
+      const porCap={}; lista.forEach(id=>{ const c=capituloDaEvidencia(id)||0; (porCap[c]=porCap[c]||[]).push(id); });
+      grade=Object.keys(porCap).map(Number).sort((a,b)=>a-b).map(c=>`<h4 class="mo-cap">${c?'Capítulo '+c:'Sem capítulo'} <span>${porCap[c].length}</span></h4><div class="mo-grade">${porCap[c].map(id=>fichaProva(id,id===mochilaSel?'sel':'')).join('')}</div>`).join('');
+    } else grade=`<div class="mo-grade">${lista.map(id=>fichaProva(id,id===mochilaSel?'sel':'')).join('')}</div>`;
+    corpo=filtros+grade;
+  }
+  const det = mochilaSel && mochilaAba!=='pertences' ? detalheProva(mochilaSel) : '';
+  el.innerHTML=`<div class="mj-fundo" onclick="fecharMochila()"></div>
+   <div class="mo-caixa${det?' com-det':''}">
+    <header class="mo-topo"><span class="mo-titulo">${ICONE_MOCHILA}<b>Mochila</b></span><span class="mo-sub">${caseTitle()}</span>
+     <button type="button" class="mj-x" onclick="fecharMochila()" aria-label="Fechar">✕</button></header>
+    <nav class="mo-abas" role="tablist">${abas.map(([k,n,q])=>`<button type="button" role="tab" aria-selected="${mochilaAba===k}" onclick="mochilaIr('${k}','')">${n}${q!==''?` <em>${q}</em>`:''}</button>`).join('')}</nav>
+    <div class="mo-corpo"><div class="mo-lista">${corpo}</div>${det}</div>
+   </div>`;
+  const foco=el.querySelector('.mo-det .mo-voltar')||el.querySelector('.mo-abas [aria-selected="true"]'); if(foco) foco.focus();
+}
+function detalheProva(id){
+  const tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id), m=(S.provasMeta||{})[id]||{};
+  const quando = m.legado||m.dia==null ? 'Obtida antes do registro de datas' : `${DAYS[(m.dia||1)-1]} · ${PERIODS[m.per]||''}${m.loc?' · '+m.loc:''}`;
+  return `<aside class="mo-det" style="--pc:${T.cor}">
+   <button type="button" class="mo-voltar" onclick="mochilaSel=null;desenharMochila()">← Voltar à lista</button>
+   <div class="mo-det-ico">${icoProva(tipo,54)}</div>
+   <div class="mo-det-tipo">${T.nome}</div>
+   <h3>${tit}</h3>${sub?`<p class="mo-det-sub">${sub}</p>`:''}
+   <dl><dt>Capítulo</dt><dd>${m.cap||capituloDaEvidencia(id)||'—'}${m.caso?' · Caso '+m.caso:''}</dd><dt>Obtida</dt><dd>${quando}</dd><dt>Registro</dt><dd><code>${id}</code></dd></dl>
+   <p class="mo-det-nota">Fica guardada no dossiê do caso. Em interrogatórios, pode ser apresentada para desmontar uma declaração falsa.</p>
+  </aside>`;
+}
+function pertencesHtml(){
+  const F=window.figurino, f=F&&F.atual?F.atual():null;
+  const roupa=f&&F.ROUPAS[f.roupa], veic=f&&f.veiculo&&F.VEICULOS[f.veiculo];
+  const excl=(S.conquistas||[]).map(id=>F&&F.recompensa&&F.recompensa(id)).filter(Boolean);
+  const tz=temTornozeleira();
+  const item=(ico,t,v,d)=>`<div class="mo-pert"><span class="mo-pert-ico" aria-hidden="true">${ico}</span><span><i>${t}</i><b>${v}</b>${d?`<small>${d}</small>`:''}</span></div>`;
+  return `<div class="mo-perts">
+   ${item('R$','Caixa','R$ '+(S.money||0).toLocaleString('pt-BR'),'Paga exames, operações e a loja do guarda-roupa')}
+   ${item(tz?'◉':'○','Tornozeleira',tz?'Ativa':'Retirada',tz?'Mede o raio e alimenta o Calor':'Livre para circular')}
+   ${item('✂','Roupa', roupa?roupa.nome:'—', 'Troca no guarda-roupa do apartamento')}
+   ${item('⛟','Veículo', veic?veic.nome:'A pé', veic?'Anda mais rápido pelo mapa':'Compre um na garagem do apartamento')}
+   ${item('◆','Peças compradas', String((S.armario||[]).length), '')}
+   ${item('★','Conquistas', String((S.conquistas||[]).length), excl.length?'Exclusivos: '+excl.join(', '):'')}
+  </div>`;
+}
+const ICONE_MOCHILA='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 7.5a5 5 0 0 1 10 0V17H5z"/><path d="M7.5 4.2V3h5v1.2M5 11h10M8.5 11v2h3v-2"/></svg>';
+
+
 /* ===================== SEASON 2: A ANATOMIA DO PATRIMÔNIO ===================== */
 
 /* --- S2 · Caso 01 — O Cálice Imperial --- */
@@ -12775,6 +12998,7 @@ function resolveHeist(id){
 
 /* ===================== RENDER ===================== */
 function render(){
+  registrarProvas();
   save();
   let inner="";
   if(mode==="modeselect"){ inner = renderModeSelect(); }
@@ -13443,7 +13667,7 @@ function renderInterrogatorio(){
     <button class="choice-btn" onclick="interroChoice('pass')">Deixar passar</button>
     <button class="choice-btn" onclick="interroChoice('press')">Pressionar (Lábia)</button>`;
   for(const evId of S.evidence){
-    html += `<button class="choice-btn evd-btn" onclick="interroChoice('evidence','${evId}')">Apresentar: ${EVID[evId]}</button>`;
+    html += `<button class="choice-btn evd-btn" style="--pc:${TIPOS_PROVA[tipoProva(evId)].cor}" onclick="interroChoice('evidence','${evId}')"><span class="evd-btn-ico">${icoProva(tipoProva(evId),16)}</span>Apresentar: ${EVID[evId]}</button>`;
   }
   html += `<button class="choice-btn warn-btn" onclick="interroChoice('bluff')">Blefar</button></div>`;
   return sceneCard("pf", html);
