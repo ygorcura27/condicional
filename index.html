@@ -770,6 +770,7 @@ body.mj-aberto{overflow:hidden}
 @media (max-width:640px){ #mesa-root .mp-meter,#forja-root .f-meter,#op-root .op-meter{min-width:0;flex:1 1 30%;padding:5px 8px}
   #mesa-root .mp-meter b,#forja-root .f-meter b,#op-root .op-meter b{white-space:normal;font-size:15px}
   #mesa-root .mp-meter i,#forja-root .f-meter i,#op-root .op-meter i{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.06em} }
+.choice-btn.plano-btn::before{content:none}
 </style>
 </head>
 <body>
@@ -13505,7 +13506,7 @@ function renderHeist(){
     : `Sábado. O leilão é à tarde. É agora ou nunca — o plano precisa ser um destes:`;
   let html = plate("vice")+`<p>${intro}</p><div class="choices">`;
   opts.forEach(o=>{
-    html += `<button class="choice-btn" style="padding-left:14px" ${o.unlocked?'':'disabled'} onclick="chooseHeist('${o.id}')">
+    html += `<button class="choice-btn plano-btn" style="padding-left:14px" ${o.unlocked?'':'disabled'} onclick="chooseHeist('${o.id}')">
       <span class="ticket"><span class="ticket-m">${o.id}</span>
       <span><span class="ticket-name">${o.name}</span><br><span class="choice-tag">${o.desc}</span><br>
       <span class="ticket-st ${o.unlocked?'st-ok':'st-no'}">${o.unlocked?'✓ disponível':'✗ requisitos não atendidos'}</span></span></span></button>`;
