@@ -122,7 +122,8 @@ button:focus-visible{outline:2px solid var(--brassL);outline-offset:2px}
 .tem-cena .pin-l{font-weight:700}
 .leg-btn.viva{border-color:var(--brassL);color:var(--paper);box-shadow:0 0 0 1px rgba(212,175,94,.35) inset}
 @keyframes halo{0%,100%{opacity:.45;stroke-width:2}50%{opacity:1;stroke-width:2.8}}
-.pulse{fill:none;stroke:var(--brassL);stroke-width:1.6;animation:blink 2.1s ease-in-out infinite}
+/* "você está aqui": anel tracejado claro, mais largo que o halo, para não virar um halo duplo */
+.pulse{fill:none;stroke:var(--paper3);stroke-width:1.6;stroke-dasharray:3 4;animation:blink 2.1s ease-in-out infinite}
 .route{stroke:var(--brassL);stroke-width:2.6;stroke-dasharray:2 8;stroke-linecap:round;fill:none;
   animation:march .8s linear infinite}
 .trail{stroke:var(--brass);stroke-width:1.6;stroke-dasharray:1 6;stroke-linecap:round;opacity:.5;fill:none}
@@ -2188,6 +2189,70 @@ const PIN_ICONS={
 function pinIcon(id){ return PIN_ICONS[id] || null; }
 
 /* ===================== ARTE: MAPA (carta náutica da Guanabara) ===================== */
+/* --- Rótulos do mapa sem colisão ---------------------------------------
+   Cada capítulo mostra um conjunto diferente de pinos sobre a mesma arte, e
+   um lx/ly fixo por local acabava com rótulo em cima de outro pino ou de
+   outro rótulo (ex.: "Superintendência PF" sobre o Ateliê). Aqui o rótulo
+   tenta a posição autorada e, se bater em algo, a próxima vaga livre ao
+   redor do pino. Obstáculos: os outros pinos, os rótulos já postos, os
+   medalhões pintados na arte, a cartela do título e o selo do raio. */
+const MEDALHOES_ARTE = {
+  rio:[[255,33],[318,45],[693,95],[180,119],[497,121],[208,122],[667,134],[256,137],[330,145],[238,161],
+       [299,171],[206,181],[358,188],[322,198],[178,204],[60,210],[550,220],[274,232],[209,263],[248,300],
+       [85,313],[368,335],[427,350],[473,360],[283,365],[514,374],[556,389],[497,394],[454,412],[107,439]],
+  sp: [[664,46],[257,73],[81,95],[515,115],[289,137],[468,139],[562,150],[176,175],[103,180],[527,197],
+       [384,205],[611,202],[280,220],[493,255],[204,265],[356,326],[220,379],[510,390],[95,421]]
+};
+const BLOQUEIOS_ARTE = {
+  rio:[{x:12,y:10,w:172,h:46},{x:15,y:72,w:44,h:44},{x:574,y:14,w:172,h:30}],
+  sp: [{x:574,y:14,w:172,h:30}]
+};
+let _rotuloCtx=null;
+function larguraRotulo(txt, negrito){
+  try{
+    if(!_rotuloCtx) _rotuloCtx=document.createElement('canvas').getContext('2d');
+    _rotuloCtx.font=`italic ${negrito?'700 ':''}10.5px Georgia,serif`;
+    return _rotuloCtx.measureText(txt).width;
+  }catch(e){ return txt.length*(negrito?6:5.5); }
+}
+function posicionarRotulos(visiveis, sp){
+  const arte = sp ? 'sp' : 'rio';
+  const discos = visiveis.map(v=>({id:v.id, x:v.l.x, y:v.l.y, r:17, peso:4}));
+  const ocupados = new Set(visiveis.map(v=>v.l.x+','+v.l.y));
+  MEDALHOES_ARTE[arte].forEach(([x,y])=>{
+    const usado = visiveis.some(v=>Math.hypot(v.l.x-x, v.l.y-y)<6);
+    if(!usado && !ocupados.has(x+','+y)) discos.push({x, y, r:12, peso:1});
+  });
+  const caixas = BLOQUEIOS_ARTE[arte].map(b=>Object.assign({peso:4}, b));
+  const sobreCaixa=(a,b)=>Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x))*Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y));
+  const sobreDisco=(a,d)=>{
+    const dx=Math.max(a.x-d.x,0,d.x-(a.x+a.w)), dy=Math.max(a.y-d.y,0,d.y-(a.y+a.h));
+    const fura=d.r-Math.hypot(dx,dy);
+    return fura>0 ? fura*Math.min(a.h,2*d.r) : 0;
+  };
+  const out={};
+  /* quem tem diálogo novo escolhe primeiro: é o rótulo que o jogador procura */
+  const ordem = visiveis.slice().sort((a,b)=>(b.viva-a.viva) || (a.l.x-b.l.x));
+  for(const v of ordem){
+    const l=v.l, w=larguraRotulo(l.short, v.viva)+3, h=13;
+    const cands=[[l.lx,l.ly,l.la],[17,4,'start'],[-17,4,'end'],[0,-21,'middle'],[0,33,'middle'],
+                 [13,-13,'start'],[-13,-13,'end'],[13,22,'start'],[-13,22,'end']];
+    let melhor=null;
+    cands.forEach(([dx,dy,a],i)=>{
+      const x0 = a==='start' ? l.x+dx-1.5 : a==='end' ? l.x+dx-w+1.5 : l.x+dx-w/2;
+      const box={x:x0, y:l.y+dy-9.5, w, h};
+      let custo=i*0.6;
+      if(box.x<4 || box.y<4 || box.x+box.w>756 || box.y+box.h>503) custo+=10000;
+      discos.forEach(d=>{ custo+=sobreDisco(box, d.id===v.id ? Object.assign({}, d, {r:14}) : d)*d.peso; });
+      caixas.forEach(c=>{ custo+=sobreCaixa(box,c)*c.peso; });
+      if(!melhor || custo<melhor.custo) melhor={custo, x:dx, y:dy, a, box};
+    });
+    out[v.id]={x:melhor.x, y:melhor.y, a:melhor.a};
+    caixas.push(Object.assign({peso:6}, melhor.box));
+  }
+  return out;
+}
+
 function mapSVG(){
   const ACTIVE=getActiveLocs();
   const cur=S.loc;
@@ -2204,19 +2269,27 @@ function mapSVG(){
     if(a&&b) route=`<line class="route" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;
   }
   /* pinos */
-  let pins="";
+  const visiveis=[];
   for(const id in ACTIVE){
     const l=ACTIVE[id];
     if(l.caso && l.caso!==S.caso) continue;
     if(l.reqFlag && !S.flags[l.reqFlag]) continue;
+    /* Halo = diálogo inédito jogável agora — o mesmo critério que segura o
+       relógio (locaisComNovidade). Cena repetível não acende: com hasLiveScene
+       o Catete brilhava para sempre por causa de apto_estudar. */
+    visiveis.push({id, l, viva:hasNewSceneNow(id)});
+  }
+  const rotulos=posicionarRotulos(visiveis, S.season>=7 && S.season<=12);
+  let pins="";
+  for(const {id, l, viva} of visiveis){
     const isCur=id===cur, fora=l.zone==="fora" && temTornozeleira();
-    const viva=hasLiveScene(id);
-    pins+=`<g class="pin ${fora?'fora':''} ${viva?'tem-cena':''}" transform="translate(${l.x},${l.y})" onclick="travelTo('${id}')" role="button" tabindex="0" aria-label="${l.name}${viva?' — há novidade aqui':''}">
-     <title>${l.name} — ${l.desc}${viva?' · há diálogo disponível':' · nada de novo por ora'}</title>
-     ${viva?'<circle class="halo" r="17"/>':''}
-     ${isCur?'<circle class="pulse" r="18"/>':''}
-     <circle class="pin-hit" r="15"/>
-     <text class="pin-l" x="${l.lx}" y="${l.ly}" text-anchor="${l.la}">${l.short}</text></g>`;
+    const r=rotulos[id];
+    pins+=`<g class="pin ${fora?'fora':''} ${viva?'tem-cena':''} ${isCur?'atual':''}" transform="translate(${l.x},${l.y})" onclick="travelTo('${id}')" role="button" tabindex="0" aria-label="${l.name}${viva?' — há novidade aqui':''}${isCur?' — você está aqui':''}">
+     <title>${l.name} — ${l.desc}${viva?' · há diálogo novo':' · nada de novo por ora'}</title>
+     ${viva?'<circle class="halo" r="15.5"/>':''}
+     ${isCur?'<circle class="pulse" r="22"/>':''}
+     <circle class="pin-hit" r="14"/>
+     <text class="pin-l" x="${r.x}" y="${r.y}" text-anchor="${r.a}">${l.short}</text></g>`;
   }
   if(S.season>=7 && S.season<=12){ return mapSVG_SP(trail, route, pins); }
   return `<div class="map-wrap"><svg viewBox="0 0 760 507" class="${traveling?'traveling':''}" aria-label="Mapa do Rio de Janeiro">
@@ -7651,8 +7724,8 @@ const LOCS_S2 = {
  corcovado:{name:"Estação Cosme Velho",zone:"fora",desc:"⚠ Fora do raio — Trilhos do Corcovado",x:61,y:208,g:"!",short:"Corcovado",lx:17,ly:4,la:"start",caso:1,reqFlag:"pistaCorcovado"},
  outeiro:{name:"Outeiro da Glória",zone:"Zona Sul",desc:"Igreja Imperial — Cripta",x:207,y:122,g:"E",short:"Outeiro Glória",lx:17,ly:4,la:"start",caso:2,reqFlag:"pistaOuteiro"},
  chopin:{name:"Edifício Chopin",zone:"Zona Sul",desc:"Copacabana — Sede da Lótia",x:555,y:389,g:"L",short:"Ed. Chopin",lx:17,ly:4,la:"start",reqFlag:"pistaLotia"},
- santa_teresa:{name:"Oficinas do Bonde",zone:"Centro Antigo",desc:"Santa Teresa — Trilhos",x:177,y:196,g:"T",short:"Santa Teresa",lx:17,ly:4,la:"start",caso:4,reqFlag:"pistaBonde"},
- pier_maua:{name:"Porto Maravilha",zone:"Centro",desc:"Píer Mauá — Escoamento",x:300,y:250,g:"X",short:"Píer Mauá",lx:17,ly:4,la:"start",reqFlag:"pistaPorto"},
+ santa_teresa:{name:"Oficinas do Bonde",zone:"Centro Antigo",desc:"Santa Teresa — Trilhos",x:178,y:204,g:"T",short:"Santa Teresa",lx:17,ly:4,la:"start",caso:4,reqFlag:"pistaBonde"},
+ pier_maua:{name:"Porto Maravilha",zone:"Centro",desc:"Píer Mauá — Escoamento",x:358,y:188,g:"X",short:"Píer Mauá",lx:17,ly:4,la:"start",reqFlag:"pistaPorto"},
  bar:{name:"Bar Alcatrão",zone:"Centro Antigo",desc:"Lapa — Seu Nelson",x:179,y:117,g:"B",short:"Bar Alcatrão",lx:17,ly:4,la:"start"},
  atelie:{name:"Ateliê da Íris",zone:"Centro Antigo",desc:"Santo Cristo — restauro",x:329,y:145,g:"A",short:"Ateliê da Íris",lx:-20,ly:26,la:"end"},
  cartorio:{name:"Arquivo do 5º Ofício",zone:"Centro Antigo",desc:"Subsolo do Palacete Valongo",x:300,y:170,g:"V",short:"Valongo (Arquivo)",lx:17,ly:4,la:"start",caso:1},
@@ -7701,7 +7774,7 @@ const LOCS_S8 = {
  morumbi:{name:"Mansão Fortificada",zone:"Morumbi",desc:"⚠ Herdeiro do Café — Atribuição Suspeita",x:204,y:267,g:"M",short:"Morumbi",lx:17,ly:4,la:"start"},
  jardins:{name:"Galeria Zima",zone:"Jardins",desc:"Fachada honesta de Anya",x:176,y:174,g:"J",short:"Jardins",lx:-17,ly:4,la:"end"},
  pinheiros:{name:"Galpão de Arte",zone:"Pinheiros",desc:"⚠ Leiloeiro Clandestino",x:219,y:379,g:"P",short:"Pinheiros",lx:17,ly:4,la:"start",reqFlag:"pistaLeiloeiroMorumbi"},
- ruaAugusta:{name:"Loja de Materiais Artísticos",zone:"Rua Augusta",desc:"Fornecedor de Alta Precisão",x:390,y:250,g:"A",short:"R. Augusta",lx:17,ly:4,la:"start",reqFlag:"pistaAugusta"},
+ ruaAugusta:{name:"Loja de Materiais Artísticos",zone:"Rua Augusta",desc:"Fornecedor de Alta Precisão",x:384,y:205,g:"A",short:"R. Augusta",lx:17,ly:4,la:"start",reqFlag:"pistaAugusta"},
  bixiga:{name:"Cortiço Gentrificado",zone:"Bixiga",desc:"⚠ Ateliê Fantasma de Igor Sokolov",x:259,y:74,g:"B",short:"Bixiga",lx:-17,ly:4,la:"end",reqFlag:"pistaBixiga"}
 };
 
@@ -12429,7 +12502,7 @@ function renderLegend(){
     const l=ACTIVE[id];
     if(l.caso && l.caso!==S.caso) continue;
     if(l.reqFlag && !S.flags[l.reqFlag]) continue;
-    const viva=hasLiveScene(id);
+    const viva=hasNewSceneNow(id);
     html+=`<button class="leg-btn ${(l.zone==='fora'&&temTornozeleira())?'fora-b':''} ${viva?'viva':''}" onclick="travelTo('${id}')" title="${viva?'há diálogo disponível':'nada de novo por ora'}">${viva?'◆ ':''}${l.short}${id===S.loc?' ●':''}</button>`;
   }
   return html+`</div>`;
