@@ -864,6 +864,34 @@ body.mj-aberto{overflow:hidden}
   .mo-abas{overflow-x:auto} .mo-abas button{white-space:nowrap;padding:8px 10px}
 }
 @media (prefers-reduced-motion: reduce){ .evd-ficha,.mh-qtd{animation:none} .mo-caixa{transition:none} }
+
+/* ============ ITENS DA MOCHILA ============ */
+.it-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.it-card{--ic:#b98f2f;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:6px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--ic)}
+.it-card.t-mesa{--ic:#5FA08C} .it-card.t-consumivel{--ic:#c98b3a}
+.it-card.travado{opacity:.6}
+.it-ico{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ic);border:1px solid color-mix(in srgb,var(--ic) 60%,transparent);background:color-mix(in srgb,var(--ic) 14%,transparent)}
+.it-txt{min-width:0}
+.it-txt i{display:block;font-style:normal;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#9a8f78}
+.it-txt b{display:block;font-weight:600;color:#f6ecd4;line-height:1.25}
+.it-ef{display:block;font-size:.82rem;color:var(--ic);margin-top:1px}
+.it-txt small{display:block;font-size:.76rem;color:#9a8f78;font-style:italic;margin-top:2px}
+.it-acao{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.it-btn{font:600 .82rem var(--serif);padding:7px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;color:#14100c;background:linear-gradient(180deg,#e2c06a,#b98f2f);border:1px solid #d8b45a}
+.it-btn:hover:not(:disabled){filter:brightness(1.08)}
+.it-btn:disabled{opacity:.45;cursor:not-allowed}
+.it-btn.usar{background:linear-gradient(180deg,#e0a35a,#b8742a);border-color:#e0a35a}
+.it-ativo{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#9fe0b0;border:1px solid rgba(120,200,140,.4);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.it-req{font-size:.7rem;color:#e8a088;white-space:nowrap}
+.it-aviso{margin:0 0 12px;padding:8px 12px;border-radius:5px;background:rgba(185,143,47,.12);border:1px solid rgba(185,143,47,.35);color:#f3e2b4;font-size:.88rem}
+.it-loja-intro{display:flex;gap:12px;align-items:center;margin:0 0 12px;color:#d6c9a8;font-style:italic}
+.it-loja-intro b{font-style:normal;color:var(--brassL)} .it-loja-intro small{font-style:normal;color:#9fe0b0}
+.it-nelson svg{display:block;width:52px;height:auto;border:1px solid var(--brassD);border-radius:3px}
+.choice-item{display:inline-block;margin-left:6px;font-size:.72rem;padding:1px 7px;border-radius:999px;background:rgba(95,160,140,.18);color:#2c5a5e;border:1px solid rgba(44,90,94,.35);vertical-align:1px}
+.hud .skchip .sk-item{font-style:normal;font-size:.68rem;color:#9fe0b0;margin-left:-4px}
+.sk-seg i.item{background:linear-gradient(180deg,#9fe0b0,#5FA08C)}
+@media (max-width:720px){ .it-lista{grid-template-columns:1fr} .it-card{grid-template-columns:auto 1fr;} .it-acao{grid-column:1/-1;flex-direction:row;justify-content:flex-end;align-items:center} }
+@media (max-width:640px){ .mh-acoes{gap:4px} .sidebtn.mh-btn{padding:7px 8px} .masthead .mh-line .mh-d:last-of-type,.masthead .mh-line::after{display:none} }
 </style>
 </head>
 <body>
@@ -917,6 +945,7 @@ function newState(){
     meters:{confianca:50, submundo:40, calor:10},
     skills:{falsificacao:7, labia:6, percepcao:5, infiltracao:4, rede:3},
     money:3000,
+    itens:{advogado:1},
     relacoes:{helena:20, nelson:10, iris:0, carol:30, anya:0, beatriz:15},
     integridade:0,
     metodo:0,
@@ -947,6 +976,7 @@ if(typeof S.relacoes.beatriz !== "number"){ S.relacoes.beatriz=15; } // migraç�
 if(typeof S.streakPerfeito !== "number"){ S.streakPerfeito=0; S.streakForjaLimpo=0; S.streakOperacaoExecutada=0; S.falhasMinigame=0; } // migração v0.10: contadores de sequência para conquistas
 if(typeof S.lastSeen !== "number"){ S.lastSeen = Date.now(); } // migração v0.11: recap de retorno
 if(typeof S.integridade !== "number"){ S.integridade=0; }               // migração v0.7: honesto(+) ↔ corrupto(-)
+if(!S.itens || typeof S.itens!=="object"){ S.itens={advogado:1}; }    // migração: itens da mochila (começa com um cartão do advogado)
 if(typeof S.metodo !== "number"){ S.metodo=0; }                         // migração v0.7: legalista(+) ↔ violento(-)
 if(!S.modo && (S.flags.prologueDone || S.flags.prologueDone2)){ S.modo="hard"; } // migração v0.3: save em andamento mantém o comportamento antigo (sem 2ª chance)
 let mode;
@@ -989,6 +1019,7 @@ function renderEvidencePopup(){
   if(!evidencePopupQueue.length) return "";
   registrarProvas();
   const id = evidencePopupQueue[0], tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id);
+  if(renderEvidencePopup._soou!==id){ renderEvidencePopup._soou=id; setTimeout(()=>som.efeito('prova'),120); }
   const noCaso=(S.evidence||[]).filter(evidenceScopeForSeason(S.season)).length;
   return `<div class="evd-overlay" onclick="if(event.target===this) window.closeEvidencePopup()">
    <div class="evd-modal evd-nova" style="--pc:${T.cor}" role="dialog" aria-label="Prova obtida">
@@ -1371,6 +1402,7 @@ function grantAchievement(id){
   if(S.conquistas.includes(id)) return;
   S.conquistas.push(id);
   try{ save(); }catch(e){}
+  if(window.som) setTimeout(()=>som.efeito('conquista'),300);
 }
 
 /* Checa os eixos globais (estilo de jogo, relações, narrativas amarradas a
@@ -1399,7 +1431,7 @@ function meetsReq(req){
   if(!req) return true;
   if(req.flags) for(const k in req.flags) if(S.flags[k]!==req.flags[k]) return false;
   if(req.flagsFalse) for(const k of req.flagsFalse) if(S.flags[k]) return false;
-  if(req.skillMin) for(const k in req.skillMin) if(S.skills[k] < req.skillMin[k]) return false;
+  if(req.skillMin) for(const k in req.skillMin) if(pericia(k) < req.skillMin[k]) return false;
   /* skillMax existe para as saídas de emergência: a escolha que só faz sentido
      para quem ainda não tem perícia suficiente, e some sozinha quando tem. */
   if(req.skillMax) for(const k in req.skillMax) if(S.skills[k] > req.skillMax[k]) return false;
@@ -1430,8 +1462,8 @@ const NOME_MEDIDOR = {confianca:"Confiança", submundo:"Submundo", calor:"Calor"
 function motivoRequisito(req){
   if(!req) return "";
   const faltas = [];
-  for(const k in (req.skillMin||{})) if(S.skills[k] < req.skillMin[k])
-    faltas.push(`${NOME_PERICIA[k]||k} ${S.skills[k]}/${req.skillMin[k]}`);
+  for(const k in (req.skillMin||{})) if(pericia(k) < req.skillMin[k])
+    faltas.push(`${NOME_PERICIA[k]||k} ${pericia(k)}/${req.skillMin[k]}`);
   for(const k in (req.skillMax||{})) if(S.skills[k] > req.skillMax[k])
     faltas.push(`${NOME_PERICIA[k]||k} já passou de ${req.skillMax[k]}`);
   for(const k in (req.meterMin||{})) if(S.meters[k] < req.meterMin[k])
@@ -2817,6 +2849,7 @@ function shell(inner){
    <nav class="mh-acoes" aria-label="Jogo">
     ${capa||!S.flags.prologueDone?'':`<button class="sidebtn mh-btn mh-mochila" type="button" onclick="abrirMochila()" aria-label="Mochila${provasNovas()?' — '+provasNovas()+' prova(s) nova(s)':''}">${ICONE_MOCHILA}<span>Mochila</span>${provasNovas()?`<b class="mh-qtd">${provasNovas()}</b>`:''}</button>`}
     <button class="sidebtn mh-btn" type="button" onclick="abrirMenu()" aria-haspopup="dialog">${ICONE_MENU}<span>Menu</span></button>
+    <button class="sidebtn mh-btn mh-som" type="button" onclick="alternarSom()" aria-pressed="${som.ativo}" aria-label="Som" title="${som.ativo?'Som ligado':'Som desligado'}">${som.ativo?ICONE_SOM_ON:ICONE_SOM_OFF}</button>
     <button class="sidebtn mh-btn" type="button" onclick="telaCheia()" title="Tela cheia" aria-label="Tela cheia">${ICONE_TELA}</button>
    </nav>
   </header>
@@ -2848,7 +2881,7 @@ function renderStatus(){
      <div class="hud-pilulas"><span class="hud-pil dinheiro">R$ ${S.money.toLocaleString('pt-BR')}</span><span class="hud-pil ${tz?'tz-on':'tz-off'}"><i></i>${tz?'Tornozeleira ativa':'Sem tornozeleira'}</span></div>
     </div></div>
    ${renderMeters()}
-   <div class="hud-pericias">${Object.entries(S.skills).map(([k,v])=>`<span class="skchip" title="${SKILL_PT[k]}: nível ${v} de 10"><span class="sk-nome">${SKILL_PT[k]}</span><b>${v}</b><span class="sk-seg">${Array.from({length:10},(_,n)=>`<i class="${n<v?'on':''}"></i>`).join('')}</span></span>`).join("")}</div>
+   <div class="hud-pericias">${Object.entries(S.skills).map(([k,v])=>`<span class="skchip" title="${SKILL_PT[k]}: nível ${v} de 10${bonusItens(k)?' (+'+bonusItens(k)+' de ferramenta)':''}"><span class="sk-nome">${SKILL_PT[k]}</span><b>${pericia(k)}</b>${bonusItens(k)&&pericia(k)>v?'<em class="sk-item">+'+(pericia(k)-v)+'</em>':''}<span class="sk-seg">${Array.from({length:10},(_,n)=>`<i class="${n<v?'on':n<pericia(k)?'item':''}"></i>`).join('')}</span></span>`).join("")}</div>
   </div>`;
 }
 function renderMeters(){
@@ -2856,6 +2889,7 @@ function renderMeters(){
   hudAnterior={confianca:m.confianca,submundo:m.submundo,calor:m.calor};
   const cartao=(k,nome)=>{
     const v=Math.max(0,Math.min(100,m[k]||0)), dv=(m[k]||0)-(ant[k]||0);
+    if(k==='calor' && dv>0 && window.som) setTimeout(()=>som.efeito(v>=85?'alarme':'calor'),250);
     const est=HUD_ESTADOS[k].find(e=>v<e[0])[1], nivel=HUD_ESTADOS[k].findIndex(e=>v<e[0]);
     return `<div class="hm hm-${k} nv${nivel}" role="meter" aria-label="${nome}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${v}" aria-valuetext="${v} — ${est}">
      <div class="hm-top"><span class="hm-ico">${HUD_ICONES[k]}</span><span class="hm-nome">${nome}</span>${dv?`<span class="hm-delta ${dv>0?'sobe':'desce'}">${dv>0?'+':'−'}${Math.abs(dv)}</span>`:''}<b class="hm-num">${v}</b></div>
@@ -5389,7 +5423,7 @@ function renderTutorialFim(){
 }
 
 function startLaudo(caso, callback){
-  const bonus = (S.skills.percepcao>=8 ? 1 : 0);
+  const bonus = (pericia('percepcao')>=8 ? 1 : 0) + (temItem('lanternaUV') ? 1 : 0);
   const pool  = caso.pool || POOLS[caso.classe] || [];
   const custoExtra = 500 * caso.dificuldade;
   const st = { orc:(ORCAMENTO[caso.dificuldade]||3)+bonus, feitos:[], modos:['visivel'],
@@ -6986,8 +7020,8 @@ function startForja(caso, callback){
      abaixo de 9 (o mesmo platô que destrava a maior parte das escolhas
      gated em Falsificação de T7-T11), e o falsário realmente consumado (10)
      ganha uma segunda operação de sobra. 2026-07-28. */
-  const bonusPrazo = S.skills.falsificacao>=10 ? 2 : (S.skills.falsificacao>=9 ? 1 : 0);
-  const veOculto = S.skills.percepcao>=7;
+  const bonusPrazo = (pericia('falsificacao')>=10 ? 2 : (pericia('falsificacao')>=9 ? 1 : 0)) + (temItem('lampada') ? 1 : 0);
+  const veOculto = pericia('percepcao')>=7;
   const ex = {};
   bancaIdsF(caso).concat(bancaDepoisIdsF(caso)).forEach(function(id){ ex[id]='aberto'; });
   const st = {prazo:caso.prazo+bonusPrazo, gasto:0, etapa:0, escolhas:[], ex:ex,
@@ -7232,9 +7266,9 @@ function startOperacao(caso, callback){
   const painel = document.getElementById('scene-choices');
   if(painel) painel.style.display='none';
 
-  const infil = S.skills.infiltracao>=7;
+  const infil = pericia('infiltracao')>=7;
   const custoExtra = 500 * caso.dificuldade;
-  const st = {orc:ORC_OP[caso.dificuldade]+(infil?1:0), feitos:[], modos:['livre'], modo:'livre',
+  const st = {orc:ORC_OP[caso.dificuldade]+(infil?1:0)+(temItem('radio')?1:0), feitos:[], modos:['livre'], modo:'livre',
     leituras:[], sel:[], plano:null, visor:{}, fim:false, extras:0};
 
   const raiz = document.createElement('div');
@@ -7542,7 +7576,7 @@ const SCENES = {
 };
 
 function resolveHangarCheck(){
-  const ok = skillCheck(S.skills.infiltracao, 7);
+  const ok = skillCheck(pericia('infiltracao'), 7);
   if(ok){ applyEffects({evidence:["ev7"], flags:{hangarCadernoObtido:true}}); return `Nos fundos, sob uma lona, uma caixa de sapato com um caderno de contabilidade paralela — nomes, valores, datas que nenhum banco jamais viu. É a prova que condena Sardinha por dentro. <span class="tell">Suas mãos tremem guardando o caderno — não é medo do Sardinha.</span>`; }
   else { applyEffects({calor:15}); return `Um segurança quase te pega. Você sai sem nada além do coração disparado e mais quinze pontos de calor na tornozeleira. Foi quase.`; }
 }
@@ -8095,7 +8129,7 @@ const SCENES5 = {
 
 function resolveBalsaCheck(){
   const dif = S.flags.balsa5_oficial ? 5 : 7;
-  const ok = skillCheck(S.skills.infiltracao, dif);
+  const ok = skillCheck(pericia('infiltracao'), dif);
   if(ok){ applyEffects({skills:{infiltracao:1}}); return `Você atravessa o convés entre caixotes de material de restauro sem que ninguém erga os olhos. Pela porta entreaberta do camarote principal, ouve uma voz de mulher ensaiando, sozinha, a mesma frase de efeito que talvez tenha usado com todo comprador em nove anos: "confiança é só a mentira mais bem embalada".`; }
   else { applyEffects({calor:20}); return `Um sensor de movimento acende luzes de segurança no convés. Alguém grita lá dentro. Você não tem mais escolha a não ser avançar rápido demais para ser discreto — o elemento surpresa, se existiu, já foi embora.`; }
 }
@@ -8116,7 +8150,7 @@ const EPILOGUES5 = {
 };
 
 function resolveSolarCheck(){
-  const ok = skillCheck(S.skills.infiltracao, 7);
+  const ok = skillCheck(pericia('infiltracao'), 7);
   if(ok){ applyEffects({evidence:["ev12"], flags:{dossieWehmuth:true}}); return `A ala da coleção fica atrás de uma porta que trava por fora — colecionador de segredos, afinal. No livro-tombo particular, o inventário: <em>três telas, "autor não identificado", aquisições 2017–2019</em>, com valores e intermediário anotados a lápis: <span class="tell">M.D.</span> Você fotografa tudo. Na parede, "Mulheres na Janela" não está — mas as outras duas telas te olham como espelhos que você não pintou.`; }
   else { applyEffects({calor:15}); return `Um caseiro acende a luz da ala errada na hora errada. Você sai pelo jardim molhado com o coração na boca e nada nas mãos — só a certeza de que as telas estão lá, e de que agora a casa sabe que alguém veio olhar.`; }
 }
@@ -8359,7 +8393,7 @@ function registrarProvas(){
       : {cap:capituloDaEvidencia(id)||S.season, caso:S.caso, dia:Math.min(S.day||1,6), per:S.period, loc:loc.name||'', nova:true};
   });
 }
-function provasNovas(){ const m=S.provasMeta||{}; return (S.evidence||[]).filter(id=>m[id]&&m[id].nova).length; }
+function provasNovas(){ const m=S.provasMeta||{}; return (S.evidence||[]).filter(evidenceScopeForSeason(S.season)).filter(id=>m[id]&&m[id].nova).length; }
 function fichaProva(id,cls){
   const tipo=tipoProva(id), T=TIPOS_PROVA[tipo], [tit,sub]=partesProva(id), meta=(S.provasMeta||{})[id]||{};
   return `<button type="button" class="sidebtn prova-ficha ${cls||''}" style="--pc:${T.cor}" onclick="abrirMochila('${id}')" aria-label="${T.nome}: ${(EVID[id]||id).replace(/"/g,'&quot;')}">
@@ -8379,7 +8413,7 @@ window.abrirMochila = function(id,aba){
   let el=document.getElementById('mochila');
   if(!el){ el=document.createElement('div'); el.id='mochila'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label','Mochila');
     el.addEventListener('keydown',ev=>{ if(ev.key==='Escape') fecharMochila(); });
-    document.body.appendChild(el); document.body.classList.add('mj-aberto'); requestAnimationFrame(()=>el.classList.add('on')); }
+    document.body.appendChild(el); document.body.classList.add('mj-aberto'); requestAnimationFrame(()=>el.classList.add('on')); som.efeito('ziper'); }
   desenharMochila();
 };
 window.fecharMochila = function(){
@@ -8387,14 +8421,17 @@ window.fecharMochila = function(){
   el.classList.remove('on'); setTimeout(()=>el.remove(),200);
   const b=document.querySelector('.mh-mochila'); if(b){ const n=provasNovas(); const q=b.querySelector('.mh-qtd'); if(q){ if(n) q.textContent=n; else q.remove(); } }
 };
-window.mochilaIr = function(aba,filtro){ mochilaAba=aba; if(filtro!==undefined) mochilaFiltro=filtro; mochilaSel=null; desenharMochila(); };
+window.mochilaIr = function(aba,filtro){ mochilaAba=aba; mochilaAviso=''; if(filtro!==undefined) mochilaFiltro=filtro; mochilaSel=null; desenharMochila(); };
 function desenharMochila(){
   const el=document.getElementById('mochila'); if(!el) return;
   const todas=S.evidence||[], doCaso=todas.filter(evidenceScopeForSeason(S.season));
   if(mochilaSel && S.provasMeta && S.provasMeta[mochilaSel]) S.provasMeta[mochilaSel].nova=false;
-  const abas=[['caso','Provas do caso',doCaso.length],['arquivo','Arquivo',todas.length],['pertences','Pertences','']];
+  const nItens=Object.values(S.itens||{}).reduce((a,b)=>a+b,0);
+  const abas=[['caso','Provas do caso',doCaso.length],['arquivo','Arquivo',todas.length],['itens','Itens',nItens],['loja','Loja',''],['pertences','Pertences','']];
   let corpo='';
   if(mochilaAba==='pertences') corpo=pertencesHtml();
+  else if(mochilaAba==='itens') corpo=itensHtml();
+  else if(mochilaAba==='loja') corpo=lojaHtml();
   else {
     const base = mochilaAba==='caso'?doCaso:todas;
     const tipos=Object.keys(TIPOS_PROVA).filter(t=>base.some(id=>tipoProva(id)===t));
@@ -8408,7 +8445,7 @@ function desenharMochila(){
     } else grade=`<div class="mo-grade">${lista.map(id=>fichaProva(id,id===mochilaSel?'sel':'')).join('')}</div>`;
     corpo=filtros+grade;
   }
-  const det = mochilaSel && mochilaAba!=='pertences' ? detalheProva(mochilaSel) : '';
+  const det = mochilaSel && (mochilaAba==='caso'||mochilaAba==='arquivo') ? detalheProva(mochilaSel) : '';
   el.innerHTML=`<div class="mj-fundo" onclick="fecharMochila()"></div>
    <div class="mo-caixa${det?' com-det':''}">
     <header class="mo-topo"><span class="mo-titulo">${ICONE_MOCHILA}<b>Mochila</b></span><span class="mo-sub">${caseTitle()}</span>
@@ -8445,6 +8482,97 @@ function pertencesHtml(){
    ${item('★','Conquistas', String((S.conquistas||[]).length), excl.length?'Exclusivos: '+excl.join(', '):'')}
   </div>`;
 }
+
+/* ===================== ITENS DA MOCHILA =====================
+   Ferramentas (ficam com ele e somam 1 a uma perícia em todo teste),
+   equipamentos de mesa (um exame, um reconhecimento ou um prazo a mais)
+   e consumíveis (usados na hora, pela mochila). Comprados com o Nelson. */
+const ITENS={
+  lupa:      {nome:'Lupa de joalheiro 10×', tipo:'ferramenta', pericia:'percepcao', preco:2500, ico:'<circle cx="10" cy="10" r="5.5"/><path d="M14 14l6 6" stroke-linecap="round"/>',
+              desc:'Aço e vidro alemão. O detalhe que escapava agora não escapa.'},
+  pinceis:   {nome:'Estojo de pincéis de marta', tipo:'ferramenta', pericia:'falsificacao', preco:4000, ico:'<path d="M14 3l7 7-8 8-4 1 1-4z" stroke-linejoin="round"/><path d="M5 19c-1 1-2 1-3 2" stroke-linecap="round"/>',
+              desc:'Os mesmos que os ateliês de restauro usam. A mão fica mais firme.'},
+  cartoes:   {nome:'Cartões de visita de marchand', tipo:'ferramenta', pericia:'labia', preco:1800, ico:'<rect x="3" y="6" width="18" height="12" rx="1.5"/><path d="M7 10h6M7 13h9" stroke-linecap="round"/>',
+              desc:'Papel de algodão, nome de galeria em Genebra. Abre portas e conversas.'},
+  gazuas:    {nome:'Jogo de gazuas', tipo:'ferramenta', pericia:'infiltracao', preco:3500, req:{submundo:40}, ico:'<path d="M3 12h10l3-3 2 2-3 3 3 3-2 2-3-3" stroke-linejoin="round"/><circle cx="5" cy="12" r="2"/>',
+              desc:'Enrolado em flanela. Só se vende pra quem o Nelson conhece.'},
+  agenda:    {nome:'Agenda de couro do Nelson', tipo:'ferramenta', pericia:'rede', preco:3000, req:{submundo:30}, ico:'<path d="M5 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5z"/><path d="M9 3v18M12 8h4M12 11h4" stroke-linecap="round"/>',
+              desc:'Trinta anos de telefones, apelidos e favores devidos.'},
+  lanternaUV:{nome:'Lanterna UV de bolso', tipo:'mesa', bonus:'+1 exame na Mesa de Perícia', preco:5000, ico:'<rect x="8" y="9" width="8" height="12" rx="1.5"/><path d="M7 9h10l-1-4H8z" stroke-linejoin="round"/><path d="M12 2v1M5 4l1 1M19 4l-1 1" stroke-linecap="round"/>',
+              desc:'Luz de 365 nm. Repintura e verniz novo acendem na hora.'},
+  lampada:   {nome:'Lâmpada de bancada com lupa', tipo:'mesa', bonus:'+1 de prazo na Bancada do Falsário', preco:5500, req:{submundo:40}, ico:'<circle cx="15" cy="7" r="4"/><path d="M12 10L6 16v5M3 21h8M12 10l-2 2" stroke-linecap="round"/>',
+              desc:'Braço articulado e lente de aumento. A peça fica pronta antes.'},
+  radio:     {nome:'Rádio de frequência fechada', tipo:'mesa', bonus:'+1 reconhecimento na Mesa de Operações', preco:6000, req:{confianca:50}, ico:'<rect x="6" y="7" width="12" height="14" rx="2"/><path d="M9 7V3M9 12h6M9 15h6" stroke-linecap="round"/>',
+              desc:'Cedido pela PF a quem ela confia. Ninguém do outro lado ouve.'},
+  advogado:  {nome:'Cartão do advogado de plantão', tipo:'consumivel', efeito:{calor:-15}, preco:3000, ico:'<path d="M12 3v18M5 7h14M5 7l-3 7h6zM19 7l-3 7h6z" stroke-linejoin="round" stroke-linecap="round"/>',
+              desc:'Um telefonema e a tornozeleira para de apitar por uns dias.'},
+  relatorio: {nome:'Relatório datilografado', tipo:'consumivel', efeito:{confianca:8}, preco:1500, ico:'<path d="M6 3h8l4 4v14H6z" stroke-linejoin="round"/><path d="M9 11h6M9 14h6M9 17h4" stroke-linecap="round"/>',
+              desc:'Tudo em ordem, carimbado, entregue antes de pedirem.'},
+  cachaca:   {nome:'Cachaça de alambique', tipo:'consumivel', efeito:{submundo:8}, preco:900, ico:'<path d="M10 2h4v4l2 3v12H8V9l2-3z" stroke-linejoin="round"/><path d="M8 13h8" stroke-linecap="round"/>',
+              desc:'Presente que se leva ao bar certo. Abre um sorriso e uma conversa.'}
+};
+const TIPOS_ITEM={ferramenta:'Ferramenta', mesa:'Equipamento', consumivel:'Consumível'};
+function temItem(id){ return !!(S && S.itens && S.itens[id]); }
+function bonusItens(k){ let b=0; for(const id in ITENS) if(ITENS[id].pericia===k && temItem(id)) b++; return b; }
+function pericia(k){ const base=(S && S.skills && S.skills[k])||0; return Math.min(10, base+bonusItens(k)); }
+/* "com a Lupa": o selo na escolha que só abriu por causa de uma ferramenta */
+function itensQueAbriram(req){
+  if(!req || !req.skillMin) return "";
+  const nomes=[]; for(const k in req.skillMin){ const base=(S.skills&&S.skills[k])||0;
+    if(base<req.skillMin[k] && pericia(k)>=req.skillMin[k]) for(const id in ITENS) if(ITENS[id].pericia===k && temItem(id)) nomes.push(ITENS[id].nome); }
+  return nomes.length ? 'com '+nomes.join(' e ') : "";
+}
+function efeitoItem(it){
+  if(it.pericia) return '+1 '+NOME_PERICIA[it.pericia]+' em todo teste';
+  if(it.bonus) return it.bonus;
+  return Object.entries(it.efeito||{}).map(([k,v])=>NOME_MEDIDOR[k]+' '+(v>0?'+':'−')+Math.abs(v)).join(' · ');
+}
+function reqItemOk(it){ const r=it.req||{}; for(const k in r) if((S.meters[k]||0)<r[k]) return false; return true; }
+function reqItemTxt(it){ const r=it.req||{}; return Object.keys(r).map(k=>NOME_MEDIDOR[k]+' ≥ '+r[k]).join(' · '); }
+function icoItem(it,tam){ return `<svg viewBox="0 0 24 24" width="${tam||22}" height="${tam||22}" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${it.ico}</svg>`; }
+function atualizarHud(){ const sb=document.querySelector('#app .statusbar'); if(sb) sb.outerHTML=renderStatus(); }
+let mochilaAviso='';
+window.usarItem = function(id){
+  const it=ITENS[id]; if(!it || it.tipo!=='consumivel' || !(S.itens[id]>0)) return;
+  for(const k in it.efeito) S.meters[k]=clamp((S.meters[k]||0)+it.efeito[k]);
+  S.itens[id]--; if(!S.itens[id]) delete S.itens[id];
+  mochilaAviso=`${it.nome}: ${efeitoItem(it)}.`; if(window.som) som.efeito(it.efeito.calor?'alivio':'item');
+  save(); atualizarHud(); desenharMochila();
+};
+window.comprarItem = function(id){
+  const it=ITENS[id]; if(!it) return;
+  if(it.tipo!=='consumivel' && temItem(id)) return;
+  if(!reqItemOk(it)){ mochilaAviso='O Nelson não vende isso pra você ainda ('+reqItemTxt(it)+').'; desenharMochila(); return; }
+  if(S.money<it.preco){ mochilaAviso='Falta R$ '+(it.preco-S.money).toLocaleString('pt-BR')+' para '+it.nome+'.'; if(window.som) som.efeito('erro'); desenharMochila(); return; }
+  S.money-=it.preco; S.itens[id]=(S.itens[id]||0)+1;
+  mochilaAviso=`Comprado: ${it.nome}.`; if(window.som) som.efeito('moeda');
+  save(); atualizarHud(); desenharMochila();
+};
+function cartaoItem(id,modo){
+  const it=ITENS[id], qtd=(S.itens||{})[id]||0, tem=qtd>0;
+  let acao='';
+  if(modo==='meus'){ if(it.tipo==='consumivel') acao=`<button type="button" class="it-btn usar" onclick="usarItem('${id}')">Usar</button>`; else acao=`<span class="it-ativo">Ativo</span>`; }
+  else { const bloqueado=!reqItemOk(it), possui=it.tipo!=='consumivel'&&tem;
+    acao = possui ? `<span class="it-ativo">Na mochila</span>`
+      : `<button type="button" class="it-btn" ${bloqueado?'disabled':''} onclick="comprarItem('${id}')">R$ ${it.preco.toLocaleString('pt-BR')}</button>`;
+    if(bloqueado) acao+=`<span class="it-req">${reqItemTxt(it)}</span>`; }
+  return `<div class="it-card t-${it.tipo}${modo!=='meus'&&!reqItemOk(it)?' travado':''}">
+    <span class="it-ico">${icoItem(it)}</span>
+    <div class="it-txt"><i>${TIPOS_ITEM[it.tipo]}${it.tipo==='consumivel'&&tem&&modo==='meus'?' · ×'+qtd:''}</i><b>${it.nome}</b><span class="it-ef">${efeitoItem(it)}</span><small>${it.desc}</small></div>
+    <div class="it-acao">${acao}</div></div>`;
+}
+function itensHtml(){
+  const meus=Object.keys(ITENS).filter(id=>(S.itens||{})[id]>0);
+  return `${mochilaAviso?`<p class="it-aviso" role="status">${mochilaAviso}</p>`:''}
+   ${meus.length?`<div class="it-lista">${meus.map(id=>cartaoItem(id,'meus')).join('')}</div>`:'<p class="mo-vazio">Nenhum item. O Nelson vende ferramentas e favores na aba Loja.</p>'}`;
+}
+function lojaHtml(){
+  const grupos=['ferramenta','mesa','consumivel'];
+  return `<p class="it-loja-intro">${PORTRAITS.nelson?`<span class="it-nelson">${PORTRAITS.nelson.svg}</span>`:''}<span><b>Nelson</b> — “Pago na hora, sem nota. Ferramenta boa não se empresta.”<br><small>Caixa: R$ ${(S.money||0).toLocaleString('pt-BR')}</small></span></p>
+   ${mochilaAviso?`<p class="it-aviso" role="status">${mochilaAviso}</p>`:''}
+   ${grupos.map(g=>`<h4 class="mo-cap">${TIPOS_ITEM[g]}s</h4><div class="it-lista">${Object.keys(ITENS).filter(id=>ITENS[id].tipo===g).map(id=>cartaoItem(id,'loja')).join('')}</div>`).join('')}`;
+}
+
 const ICONE_MOCHILA='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 7.5a5 5 0 0 1 10 0V17H5z"/><path d="M7.5 4.2V3h5v1.2M5 11h10M8.5 11v2h3v-2"/></svg>';
 
 
@@ -8703,7 +8831,7 @@ function resolveBarbaraArriscado(){
   return `O delegado lê, relê, e devolve a pasta com uma cara que dispensa explicação. "Isso aqui não segura nem até amanhã." Bárbara sai pela porta da frente com um sorriso de quem já comprou passagem — e quarenta e oito horas depois, comprou mesmo. Lisboa. Helena não grita com você. O silêncio dela é pior.`;
 }
 function resolveIncendiarioCheck(){
-  const ok = skillCheck(S.skills.infiltracao, 6);
+  const ok = skillCheck(pericia('infiltracao'), 6);
   if(ok){
     applyEffects({confianca:6, calor:6, evidence:["s2ev5"], flags:{incendiarioPreso:true}});
     return `Ele erra a curva no paralelepípedo molhado; você não. A queda derruba os dois, mas você levanta primeiro — e o bolso do macacão dele entrega uma planilha dobrada em quatro: fiscais de demolição, valores, datas. A vizinhança inteira ouviu a confusão, o que Helena vai ler no relatório de ocorrência. Mas a planilha vale o barulho.`;
@@ -8712,7 +8840,7 @@ function resolveIncendiarioCheck(){
   return `A moto dele arranca dois segundos antes de você alcançar o guidão. Sobra o eco do motor descendo a Glória, um walkie-talkie mudo, e a certeza desconfortável de que quem mandou queimar a cripta agora sabe seu rosto.`;
 }
 function resolveBlefeCheck(){
-  const ok = skillCheck(S.skills.labia, 8);
+  const ok = skillCheck(pericia('labia'), 8);
   if(ok){
     applyEffects({confianca:5, calor:5, evidence:["s2ev4"], flags:{lotiaExposta:true, lotiaExpostaBlefe:true}});
     return `"Mandaram um consultor," você responde, sem pressa, "porque delegado assusta advogado — e a PF quer você assinando, não fugindo." A caneta de Menezes para de girar. Ele assina a delação parcial apostando que você não blefaria com algo tão fácil de verificar. Perdeu a aposta. Helena vai ganhar um caso — construído sobre três folhas em branco, o que ela nunca pode descobrir.`;
@@ -8722,7 +8850,7 @@ function resolveBlefeCheck(){
 }
 function resolveOuteiroCheck(){
   const dif = S.flags.barbaraLivre ? 5 : 8;
-  const ok = skillCheck((S.skills.infiltracao+S.skills.percepcao)/2, dif);
+  const ok = skillCheck((pericia('infiltracao')+pericia('percepcao'))/2, dif);
   if(ok){
     applyEffects({evidence:["s2ev3"], flags:{documentoSalvo:true, pistaLotia:true}});
     return `Você alcança a arca certa antes dos vultos — um pergaminho notarial colonial, selo de cera ainda intacto, sai debaixo do braço enquanto os outros dois fogem escada acima sem levar nada. No corpo do documento, um nome de empresa controladora: <strong>Holding Patrimonial Lótia</strong>.`;
@@ -8938,11 +9066,11 @@ function resolveBondeCheck(){
     return `O bonde para diante do cavalete de "vistoria estrutural" sem que ninguém a bordo desconfie de nada — fiscal de verdade, prancheta de verdade, ordem assinada. Quando os gerentes da Lótia entendem que a vistoria não vai acabar nunca, a PF já cerca o vagão pelos dois lados. Discos rígidos, a bolsa de ferramentas de cunhagem, e nem um tiro: a apreensão mais silenciosa da temporada, comprada com a planilha do incendiário.`;
   }
   if(S.flags.lotiaExposta){
-    const ok = skillCheck((S.skills.percepcao+S.skills.rede)/2, 6);
+    const ok = skillCheck((pericia('percepcao')+pericia('rede'))/2, 6);
     if(ok){ applyEffects({evidence:["s2ev6"], flags:{bondeApreendido:true}, confianca:8}); return `O bloqueio nos Arcos da Lapa funciona com precisão de manual. O vagão para, os gerentes da Lótia são detidos com discos rígidos e uma bolsa de lona cheia de ferramentas de cunhagem do século XIX ainda nas mãos.`; }
     else { applyEffects({calor:10, flags:{provasParciais:true}}); return `O bloqueio chega tarde demais — o bonde já passou dos Arcos quando a barreira se fecha. Metade da carga é recuperada num beco próximo; a outra metade, e os homens que a carregavam, desaparecem na neblina.`; }
   } else {
-    const ok = skillCheck(S.skills.falsificacao, 7);
+    const ok = skillCheck(pericia('falsificacao'), 7);
     if(ok){ applyEffects({evidence:["s2ev6"], flags:{bondeApreendido:true}, submundo:10, calor:15}); return `O sinal clonado da sua tornozeleira compra tempo suficiente. Você intercepta o bonde sozinho, ameaça os dois seguranças de bordo com o que resta da sua antiga reputação, e sai carregando discos e a bolsa de ferramentas de cunhagem antes de qualquer reforço chegar.`; }
     else { applyEffects({calor:25, flags:{provasParciais:true}}); return `A clonagem do sinal falha na pior hora — o verdadeiro rastreador da PF pisca de volta bem no meio da abordagem. Você recua com metade da carga e a sensação clara de que alguém, em algum lugar, acabou de anotar seu número.`; }
   }
@@ -9063,7 +9191,7 @@ function resolveCercoCheck(){
     applyEffects({flags:{cassianoPresoProvas:true}, confianca:10, calor:-5});
     return `Com o que você já tinha contra Cassiano — de Paquetá — e o bilhete de embarque do cofre, o cerco fecha sem brecha nenhuma. Ele é preso com a mão nas tintas. Fim da linha para a Sombra.`;
   }
-  if(S.flags.cassianoAmeacado || S.skills.labia >= 8){
+  if(S.flags.cassianoAmeacado || pericia('labia') >= 8){
     applyEffects({flags:{cassianoConfessou:true}, confianca:8, calor:5});
     return `Cassiano tenta argumentar, mas o que você já sabe sobre ele pesa mais que qualquer álibi. Ele confessa antes das algemas.`;
   }
@@ -9434,7 +9562,7 @@ const SCENES_S3C4 = {
 };
 
 function resolveChopinS3Check(){
-  const ok = skillCheck((S.skills.percepcao+S.skills.infiltracao)/2, 7);
+  const ok = skillCheck((pericia('percepcao')+pericia('infiltracao'))/2, 7);
   if(ok){ applyEffects({evidence:["ev18"], flags:{cercoFechado:true}}); return `Você alcança o último cofre a tempo — dentro, um bilhete de embarque para uma balsa de pesca na Ilha do Sol, às pressas, tinta ainda fresca. Cassiano não vai muito longe.`; }
   else { applyEffects({calor:10, flags:{cercoAberto:true}}); return `Cassiano já foi. O cofre mais importante está vazio, mas um mapa de rota rabiscado cai atrás de um móvel — o suficiente pra saber pra onde ele corre, mesmo sem alcançá-lo hoje.`; }
 }
@@ -12927,13 +13055,13 @@ function heistOptions(){
 function resolveHeist2(id){
   let out={wehmuthPreso:false, confiancaDelta:0, submundoDelta:0, calorNow:0, flags:{}, text:""};
   if(id==="A"){
-    const ok=skillCheck(S.skills.labia,8);
+    const ok=skillCheck(pericia('labia'),8);
     if(ok){ out.wehmuthPreso=true; out.confiancaDelta=12;
       out.text=`O "colecionador de Genebra" volta à ativa — desta vez do lado de cá da baía. No salão do Solar, entre palmeiras e silêncio caro, Wehmuth oferece o que nenhum inocente teria: <em>"obras do mesmo autor da Mulheres na Janela, procedência a combinar."</em> A frase atravessa a escuta da PF inteira e limpa. Quando os agentes cruzam o portão de ferro, o velho ainda está de taça na mão.`; }
     else { out.calorNow=25; out.confiancaDelta=-8;
       out.text=`Wehmuth te recebe, escuta, sorri — e no meio do segundo uísque, sem pressa: "O senhor tem as mãos de um pintor, não de um comprador. Dourado guardava fotografias suas, sabia?" A porta se abre sozinha atrás de você. O disfarce morreu no vestíbulo; a escuta só gravou a sua derrota.`; }
   } else if(id==="B"){
-    const ok=skillCheck(S.skills.falsificacao,8);
+    const ok=skillCheck(pericia('falsificacao'),8);
     if(ok){ out.wehmuthPreso=true; out.calorNow=10;
       out.text=`A quarta tela aparece "descoberta" num marchand do Centro — e a sombra vermelha sob o parapeito faz o serviço que só ela sabe fazer. Em quarenta e oito horas, a oferta de compra chega: agressiva, sigilosa, paga pela <em>mesma conta-espelho de 2017</em>. A ponte entre as décadas se fecha num extrato bancário. A PF prende Wehmuth recebendo a tela — a única obra sua que nasceu para condenar.`; }
     else { out.calorNow=20; out.flags={quartaTelaSolta:true};
@@ -12946,13 +13074,13 @@ function resolveHeist2(id){
       ? `Helena entra no Solar com mandado, perito e a cadeia documental inteira: a ordem de 2017, a carta, ${S.evidence.includes("ev12")?"o inventário do livro-tombo":"a nota do lote de pigmentos"}. Wehmuth recebe a equipe com cortesia de museu — e sai algemado com a mesma cortesia. Papel, no fim, foi o que derrubou o homem que colecionava papel.`
       : `O mandado sai, a equipe entra — e encontra paredes recém-esvaziadas, ganchos sem quadros, um livro-tombo "extraviado". Wehmuth, formalíssimo, lamenta não poder ajudar. Sem o documento que amarre as telas a ele, a operação prende o vazio. Helena fecha a pasta devagar. "Faltou a peça." Você sabia qual.`;
   } else if(id==="D"){
-    const ok1=skillCheck(S.skills.labia,8), ok2=skillCheck((S.skills.percepcao+S.skills.rede)/2,8);
+    const ok1=skillCheck(pericia('labia'),8), ok2=skillCheck((pericia('percepcao')+pericia('rede'))/2,8);
     if(ok1&&ok2){ out.wehmuthPreso=true; out.confiancaDelta=15; out.submundoDelta=10; out.flags={sombraCompleta:true, douradoExposto:true};
       out.text=`Você se senta diante das telas que não pintou e diz a única frase que abre aquela casa: "A sombra vermelha é minha." Wehmuth tira os óculos, limpa, recoloca — um colecionador diante da peça que faltava. A negociação dura duas horas: autenticação pela verdade. Ele entrega 2017 inteiro — a encomenda, o pagamento, o intermediário — e, no fim, quase gentil: <em>"A carta à polícia? Pergunte a quem redigia os seus contratos."</em> Tudo gravado. Con dentro do con, segunda edição.`; }
     else { out.calorNow=40;
       out.text=`Wehmuth escuta a sua confissão com interesse de entomologista — e não morde. "Uma história notável. Infelizmente não colecionо ficção." Enquanto os seguranças te acompanham ao portão, pela janela da biblioteca você vê a lareira acesa em pleno calor de julho, comendo papel. O arquivo dele está virando fumaça, e a sua tornozeleira, um alarme.`; }
   } else if(id==="E"){
-    const ok=skillCheck((S.skills.labia+S.skills.percepcao)/2, 8);
+    const ok=skillCheck((pericia('labia')+pericia('percepcao'))/2, 8);
     if(ok){ out.wehmuthPreso = S.evidence.includes("ev11")||S.evidence.includes("ev12"); out.confiancaDelta=5; out.calorNow=10;
       out.text = out.wehmuthPreso
         ? `Sem plano fechado, você improvisa com o que levantou — e o improviso, apoiado nos documentos certos, sustenta. A PF fecha o cerco no Solar antes do anoitecer.`
@@ -12966,11 +13094,11 @@ function resolveHeist2(id){
 function resolveHeist(id){
   let out={sardinhaPreso:false, telaExposta:false, confiancaDelta:0, submundoDelta:0, text:""};
   if(id==="A"){
-    const ok=skillCheck(S.skills.labia,7);
+    const ok=skillCheck(pericia('labia'),7);
     if(ok){ out.sardinhaPreso=true; out.confiancaDelta=15; out.text=`Você cobre o lance disfarçado de comprador estrangeiro. Sardinha, pressionado a justificar a origem do dinheiro pra não perder o leilão, comete o erro que persegue há seis anos: ordena uma transferência rastreável, ao vivo, para não perder a face. A PF prende no ato do pagamento.`; }
     else { out.calorNow=25; out.confiancaDelta=-10; out.text=`Sardinha reconhece seu disfarce a meio caminho — ele conhece todo mundo do meio. O leilão continua, ele escapa, e agora sabe que você trabalha pra PF.`; }
   } else if(id==="B"){
-    const ok=skillCheck(S.skills.falsificacao,8);
+    const ok=skillCheck(pericia('falsificacao'),8);
     if(ok){ out.sardinhaPreso=true; out.telaExposta=false; out.confiancaDelta=-10; out.text=`A troca funciona. O crime se consuma sobre a cópia; a PF prende no pagamento. A tela original — a prova contra você mesmo — está de volta em suas mãos, destruível. Ninguém nunca vai saber que "Mulheres na Janela" tem duas versões.`; }
     else { out.calorNow=30; out.text=`A troca é notada por um funcionário da casa de leilões no pior momento possível. Confusão, o leilão é suspenso, e agora há uma pergunta nova pairando: por que havia duas telas idênticas na sala?`; }
   } else if(id==="C"){
@@ -12981,12 +13109,12 @@ function resolveHeist(id){
       ? `Operação oficial, mandado em mãos. Com a gravação (ou o caderno) conectando Sardinha diretamente, a prisão é limpa, documentada, inatacável.`
       : `Operação oficial prende o laranja e Bulhões no flagrante — mas sem a conexão direta, Sardinha some antes da PF chegar perto dele. Helena sabia que faltava a peça. Você também sabia.`;
   } else if(id==="D"){
-    const ok1=skillCheck(S.skills.labia,8), ok2=skillCheck((S.skills.percepcao+S.skills.infiltracao)/2,8);
+    const ok1=skillCheck(pericia('labia'),8), ok2=skillCheck((pericia('percepcao')+pericia('infiltracao'))/2,8);
     if(ok1&&ok2){ out.sardinhaPreso=true; out.confiancaDelta=20; out.submundoDelta=10; out.flags={golpeReverso:true};
       out.text=`Você se senta à mesa de Sardinha e se revela como o autor da tela. Ele ri — deliciado, vaidoso, exatamente como Helena previu. "Finalmente alguém com talento de verdade." Ele propõe sociedade. Você aceita, grava tudo, entrega a confissão à PF antes do fim de semana. Con dentro do con.`; }
     else { out.calorNow=40; out.text=`Sardinha vê o blefe por trás do blefe. "Você é bom," ele diz, "mas não é tão bom." A reunião termina com uma ameaça velada e sua tornozeleira mais perto do limite do que jamais esteve.`; }
   } else if(id==="E"){
-    const ok=skillCheck((S.skills.labia+S.skills.percepcao)/2, 8);
+    const ok=skillCheck((pericia('labia')+pericia('percepcao'))/2, 8);
     if(ok){ out.sardinhaPreso = S.evidence.includes("ev6")||S.evidence.includes("ev7"); out.confiancaDelta=5; out.calorNow=10;
       out.text = out.sardinhaPreso
         ? `Sem plano fechado, você improvisa em cima da hora — e a improvisação, puxada pelo que você já tinha levantado, funciona bem o bastante pra PF prender Sardinha no ato.`
@@ -13031,7 +13159,8 @@ function render(){
   if((mode==="dossie"||mode==="conquistas"||mode==="evidencias"||mode==="daily-intro"||mode==="weekly-intro"||mode==="tutorial-intro"||mode==="tutorial-fim") && inner.indexOf('scene-card')<0) inner = sceneCard(null, inner);
   app.innerHTML = shell(inner);
   const chave = mode+'|'+currentScene+'|'+S.season+'|'+S.caso;
-  if(chave!==render._chave){ render._chave=chave; app.classList.remove('entra'); void app.offsetWidth; app.classList.add('entra'); }
+  if(chave!==render._chave){ const primeira=!render._chave; render._chave=chave; app.classList.remove('entra'); void app.offsetWidth; app.classList.add('entra'); if(!primeira) som.efeito('pagina'); }
+  somBase=trilhaDaTela(); som.contexto(somBase);
 }
 
 function renderLegend(){
@@ -13266,7 +13395,8 @@ function renderScenePanel(){
   sc.choices.forEach((c,i)=>{
     const ok = meetsReq(c.requires);
     if(ok) algumaAberta = true;
-    html += `<button class="choice-btn" ${ok?'':'disabled'} onclick="sceneChoice(${i})">${c.label}${ok?'':' <span class="choice-tag">'+motivoRequisito(c.requires)+'</span>'}</button>`;
+    const viaItem = ok ? itensQueAbriram(c.requires) : "";
+    html += `<button class="choice-btn" ${ok?'':'disabled'} onclick="sceneChoice(${i})">${c.label}${viaItem?` <span class="choice-item">${viaItem}</span>`:''}${ok?'':' <span class="choice-tag">'+motivoRequisito(c.requires)+'</span>'}</button>`;
   });
   /* Saída de emergência: cena em que toda escolha está travada deixaria o
      jogador olhando para botões cinzas sem nenhuma forma de sair. A cena não
@@ -13531,7 +13661,7 @@ window.douradoChoice = function(i){
     applyEffects({flags:{douradoVeio:true}, skills:{percepcao:1}});
     text = `Você deixa o silêncio trabalhar. Dourado fala demais — do mercado, dos velhos tempos, de "águas passadas". <span class="tell">Ele menciona a tela do leilão três vezes sem que você pergunte. E nunca, nem uma vez, pergunta se foi você que a pintou.</span> Quem não faz a pergunta óbvia já sabe a resposta.`;
   } else if(i===1){
-    const ok = skillCheck(S.skills.labia,7);
+    const ok = skillCheck(pericia('labia'),7);
     if(ok){ applyEffects({flags:{douradoNervoso:true}, calor:3});
       text = `"Bulhões lembra de você, Márcio. 2017. Quem te entregou a tela pra vender?" O sorriso dele derrapa meio segundo — <span class="tell">a mão sobe pro cachecol, ajeita o que não precisava de ajuste.</span> "Isso faz muito tempo, Vincent." Ele recupera o tom, mas a noite dele acabou aqui. A sua está só começando.`; }
     else { applyEffects({calor:8});
@@ -13564,7 +13694,7 @@ window.comissaoChoice = function(i){
     applyEffects({calor:quase?-20:-10, confianca:3});
     text = `Helena abre a pasta que trouxe fechada. Números, apreensões, o valor recuperado ao erário — e uma frase seca: "resultado operacional excepcional, obtido dentro do risco autorizado por esta delegada." O relator não tem por onde morder. <span class="tell">Ela assumiu o seu pico de risco como decisão dela.</span> Vocês dois sabem que não foi. É o maior voto de confiança que ela já te deu — e uma dívida nova no seu caderno.`;
   } else if(i===1){
-    const ok=skillCheck(S.skills.labia, quase?7:5);
+    const ok=skillCheck(pericia('labia'), quase?7:5);
     if(ok){ applyEffects({calor:quase?-15:-10}); text = `Você fala a língua deles: gestão de risco, janela operacional, proporcionalidade. ${quase?'O pico de 100 pontos vira "exposição controlada em operação de flagrante". ':''} O relator anota, assente, arquiva. Burocracia é um idioma — e você sempre teve talento pra idiomas.`; }
     else { applyEffects({calor:quase?15:8, flags:{comissaoMarcada:true}}); text = `No meio da explicação, o relator te interrompe com a pergunta exata que você esperava que ninguém fizesse. Você improvisa. Improvisar, numa comissão, é sinônimo de "anotado para a próxima revisão". A régua sobre você acaba de descer um furo.`; }
   } else {
@@ -13590,7 +13720,7 @@ function runCoquetel(){
 window.coquetelChoice = function(i){
   let text;
   if(i===0){
-    const ok = skillCheck(S.skills.labia,7);
+    const ok = skillCheck(pericia('labia'),7);
     if(ok){ applyEffects({evidence:["ev6"], calor:10}); text=`Sardinha ri, mas o riso chega um segundo atrasado. "Prova de quê, exatamente?" Ele se afasta rápido demais — e o celular dele, esquecido na mesa de canapés por trinta segundos, guarda mais do que ele acha. Você sai com uma gravação que não devia ter.`; }
     else { applyEffects({calor:15}); text=`Ele não morde a isca. "Você fala como alguém blefando," ele diz, baixinho, só pra você. "Cuidado com isso." O calor da noite sobe — ele agora sabe que você joga sujo.`; }
   } else if(i===1){
@@ -13616,11 +13746,11 @@ function runPericia(){
 window.periciaChoice = function(i){
   let text;
   if(i===0){
-    const ok=skillCheck(S.skills.labia,6);
+    const ok=skillCheck(pericia('labia'),6);
     if(ok){ applyEffects({calor:5, flags:{periciaAdiada:true, periciaDone:true}}); text=`Você convence Helena de que a agenda do laboratório está sobrecarregada — melhor esperar um perito mais experiente. Ela concorda, desconfiada. Você ganhou tempo, não segurança.`; }
     else { applyEffects({confianca:-5, flags:{periciaDone:true}}); text=`"Não," Helena corta. "A perícia é hoje." Ela nota sua insistência estranha — arquivada, silenciosamente, contra você.`; }
   } else if(i===1){
-    const ok=skillCheck(S.skills.falsificacao,8);
+    const ok=skillCheck(pericia('falsificacao'),8);
     if(ok){ applyEffects({calor:20, flags:{periciaSabotada:true, periciaDone:true}}); text=`Um comentário técnico bem colocado, uma amostra "sem querer" contaminada — o laudo sai inconclusivo quanto à idade da tela. Ninguém percebe sua mão nisso. Ainda.`; }
     else { applyEffects({calor:35, flags:{periciaDone:true}}); text=`O perito percebe a interferência. Não sabe que foi você — ainda — mas agora há uma nota no processo sobre "irregularidade na cadeia de custódia". A tornozeleira sente o calor subir rápido.`; }
   } else {
@@ -13687,7 +13817,7 @@ window.interroChoice = function(kind, evId){
       text = st.pressureResult;
       ir.idx++;
     } else {
-      const ok = skillCheck(S.skills.labia,6);
+      const ok = skillCheck(pericia('labia'),6);
       if(ok){ text = `Você pressiona. ${nome} elabora demais, contradiz um pequeno detalhe — nada decisivo, mas ele está mais nervoso agora.`; }
       else { text = `Ele se fecha. "Já respondi isso." Tentativas restantes reduzem.`; ir.tries--; }
     }
@@ -13701,7 +13831,7 @@ window.interroChoice = function(kind, evId){
       ir.tries--;
     }
   } else if(kind==="bluff"){
-    const ok = skillCheck(S.skills.labia + S.skills.falsificacao, 12);
+    const ok = skillCheck(pericia('labia') + pericia('falsificacao'), 12);
     applyEffects({calor:10});
     if(ok){
       text = `O blefe cola. ${nome}, exausto, acredita que você tem mais do que tem — e desmorona: "${st.contradictResult ? st.contradictResult.split('.')[0]+'.' : 'Tudo bem, eu conto o resto.'}"`;
@@ -15134,6 +15264,139 @@ window.resetGame = function(){
   save(); render();
 };
 
+
+/* ===================== SOM =====================
+   Tudo sintetizado na hora (Web Audio), sem arquivo nenhum. Uma trilha por
+   contexto — bossa no Rio, noir com chuva em São Paulo, tensão nas mesas e
+   nos interrogatórios, tema na capa — e efeitos curtos para o que acontece.
+   O navegador só libera o áudio depois do primeiro toque do jogador. */
+window.som = (function(){
+  let ctx=null, mestre=null, musBus=null, sfxBus=null, eco=null, ruido=null;
+  let ativo=true, volMus=0.5, volSfx=0.8;
+  try{ const c=JSON.parse(localStorage.getItem('condicional_som')||'{}');
+    if(typeof c.ativo==='boolean') ativo=c.ativo; if(typeof c.musica==='number') volMus=c.musica; if(typeof c.efeitos==='number') volSfx=c.efeitos; }catch(e){}
+  const guardar=()=>{ try{ localStorage.setItem('condicional_som',JSON.stringify({ativo,musica:volMus,efeitos:volSfx})); }catch(e){} };
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  let estilo=null, pedido='tema', camada=null, proxBar=0, bar=0, loops=[], relogio=null;
+
+  function iniciar(){
+    if(ctx){ if(ctx.state==='suspended') ctx.resume(); return; }
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    try{ ctx=new AC(); }catch(e){ ctx=null; return; }
+    mestre=ctx.createGain(); const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-18; comp.ratio.value=3;
+    mestre.connect(comp); comp.connect(ctx.destination);
+    musBus=ctx.createGain(); sfxBus=ctx.createGain(); musBus.connect(mestre); sfxBus.connect(mestre);
+    // eco de sala: impulso de ruído que decai
+    eco=ctx.createConvolver(); const n=ctx.sampleRate*2.4, ir=ctx.createBuffer(2,n,ctx.sampleRate);
+    for(let c=0;c<2;c++){ const d=ir.getChannelData(c); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3); }
+    eco.buffer=ir; const ecoG=ctx.createGain(); ecoG.gain.value=.32; eco.connect(ecoG); ecoG.connect(mestre);
+    ruido=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate); const r=ruido.getChannelData(0); for(let i=0;i<r.length;i++) r[i]=Math.random()*2-1;
+    aplicar(); relogio=setInterval(agendar,120); trocar(pedido,true);
+  }
+  ['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,iniciar,{passive:true}));
+  function aplicar(){ if(!ctx) return; const t=ctx.currentTime;
+    mestre.gain.setTargetAtTime(ativo?.9:0,t,.08); musBus.gain.setTargetAtTime(volMus*.55,t,.2); sfxBus.gain.setTargetAtTime(volSfx,t,.05); }
+
+  /* ---------- instrumentos ---------- */
+  function env(g,t,a,pico,dur){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(pico,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); }
+  function osc(tipo,f,t,dur,pico,dest,a,filtro,mol){ const o=ctx.createOscillator(), g=ctx.createGain(); o.type=tipo; o.frequency.value=f; if(mol) o.detune.value=mol;
+    let no=o; if(filtro){ const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=filtro; o.connect(lp); no=lp; }
+    no.connect(g); env(g,t,a||.005,pico,dur); g.connect(dest); o.start(t); o.stop(t+dur+.05); return g; }
+  function piano(m,t,v,dest){ const f=hz(m); const g1=osc('triangle',f,t,1.6,v,dest,.004,2600); osc('sine',f*2,t,.7,v*.25,dest,.004); if(eco) g1.connect(eco); }
+  function vibra(m,t,v,dest){ const f=hz(m); const g=osc('sine',f,t,2.4,v,dest,.003); osc('sine',f*4,t,.35,v*.18,dest,.002); if(eco) g.connect(eco); }
+  function baixo(m,t,v,dest,dur){ const f=hz(m); osc('sine',f,t,dur||.9,v,dest,.01); osc('triangle',f,t,(dur||.9)*.5,v*.35,dest,.01,900); }
+  function pad(ms,t,dur,v,dest,corte){ ms.forEach(m=>{ for(const d of [-7,7]){ const o=ctx.createOscillator(), lp=ctx.createBiquadFilter(), g=ctx.createGain();
+      o.type='sawtooth'; o.frequency.value=hz(m); o.detune.value=d; lp.type='lowpass'; lp.frequency.value=corte||800; lp.Q.value=.4;
+      o.connect(lp); lp.connect(g); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v,t+Math.min(1.2,dur*.4));
+      g.gain.setValueAtTime(v,t+dur*.75); g.gain.exponentialRampToValueAtTime(0.0001,t+dur+.6); g.connect(dest); if(eco) g.connect(eco); o.start(t); o.stop(t+dur+.7); } }); }
+  function chiado(t,dur,v,dest,f1,f2,q){ const b=ctx.createBufferSource(), bp=ctx.createBiquadFilter(), g=ctx.createGain(); b.buffer=ruido;
+    bp.type='bandpass'; bp.frequency.setValueAtTime(f1,t); if(f2) bp.frequency.exponentialRampToValueAtTime(f2,t+dur); bp.Q.value=q||1;
+    b.connect(bp); bp.connect(g); env(g,t,Math.min(.01,dur/4),v,dur); g.connect(dest); b.start(t,Math.random()*1.5); b.stop(t+dur+.05); }
+  function ambiente(tipo,dest){ // chuva (SP) ou mar (Rio), em laço
+    const b=ctx.createBufferSource(), f=ctx.createBiquadFilter(), g=ctx.createGain(); b.buffer=ruido; b.loop=true;
+    if(tipo==='chuva'){ f.type='bandpass'; f.frequency.value=2200; f.Q.value=.35; g.gain.value=.05; }
+    else { f.type='lowpass'; f.frequency.value=420; g.gain.value=.05; const lfo=ctx.createOscillator(), lg=ctx.createGain(); lfo.frequency.value=.09; lg.gain.value=.035; lfo.connect(lg); lg.connect(g.gain); lfo.start(); loops.push(lfo); }
+    b.connect(f); f.connect(g); g.connect(dest); b.start(); loops.push(b); }
+
+  /* ---------- trilhas ---------- */
+  const R=(a)=>a[Math.floor(Math.random()*a.length)];
+  const ESTILOS={
+    rio:{bpm:84, acordes:[[50,57,60,64,65],[43,53,57,59,64],[48,55,59,62,64],[45,55,58,61,64]], baixo:[38,43,36,45], amb:'mar',
+      compasso(t,b,c,i,d){ const bt=60/this.bpm;
+        baixo(this.baixo[i],t,.32,d); baixo(this.baixo[i]+7,t+1.5*bt,.22,d); baixo(this.baixo[i]+7,t+2*bt,.18,d); baixo(this.baixo[i],t+3.5*bt,.2,d);
+        for(const o of [.5,1.5,2.25,3,3.75]) c.slice(1).forEach(m=>piano(m+12,t+o*bt,.035,d));
+        for(let k=0;k<8;k++) chiado(t+k*bt/2,.09,k%4===2?.05:.025,d,5200,null,1.2);
+        if(Math.random()<.7){ const n=1+Math.floor(Math.random()*3); for(let k=0;k<n;k++) vibra(R(c.slice(2))+24,t+R([0,1,1.5,2.5,3])*bt,.05,d); } } },
+    sp:{bpm:64, acordes:[[45,52,55,59,60],[41,52,57,60,64],[38,53,57,60,64],[40,50,56,59,62]], amb:'chuva',
+      compasso(t,b,c,i,d){ const bt=60/this.bpm, bd=4*bt;
+        pad(c.slice(1),t,bd,.022,d,700); baixo(c[0]-12,t,.3,d,bd*.5); baixo(c[0]-12,t+2*bt,.2,d,bd*.45);
+        if(Math.random()<.8) piano(R(c.slice(2))+12,t+R([0,1,2,2.5])*bt,.06,d);
+        if(Math.random()<.4) piano(R(c.slice(3))+24,t+R([1.5,3,3.5])*bt,.035,d); } },
+    tensao:{bpm:92, acordes:[[38,45,50,53],[38,45,50,51],[37,44,50,53],[38,45,49,52]],
+      compasso(t,b,c,i,d){ const bt=60/this.bpm;
+        if(b%2===0) pad(c,t,8*bt,.02,d,420);
+        for(let k=0;k<4;k++) chiado(t+k*bt,.03,k===0?.09:.06,d,4200,null,6);
+        if(Math.random()<.45) piano(R([62,63,65,68,69]),t+R([1,2,3])*bt,.045,d);
+        baixo(26,t,.22,d,1.4); } },
+    tema:{bpm:70, acordes:[[50,57,60,64,65],[43,53,57,59,64],[48,55,59,62,64],[45,55,58,61,64]], motivo:[[0,76],[1,74],[1.5,72],[3,69]], amb:'mar',
+      compasso(t,b,c,i,d){ const bt=60/this.bpm;
+        pad(c.slice(1),t,4*bt,.016,d,900); baixo(c[0]-12,t,.25,d,2);
+        if(b%2===0) this.motivo.forEach(([o,m])=>vibra(m,t+o*bt,.07,d)); else vibra(R(c.slice(2))+24,t+2*bt,.05,d); } }
+  };
+  function trocar(nome,ja){
+    pedido=nome; if(!ctx || nome===estilo) return;
+    const t=ctx.currentTime;
+    if(camada){ const velha=camada, vl=loops; velha.gain.setTargetAtTime(0.0001,t,.6); setTimeout(()=>{ try{ velha.disconnect(); vl.forEach(l=>{ try{l.stop();}catch(e){} }); }catch(e){} },3500); }
+    estilo=nome; loops=[]; camada=ctx.createGain(); camada.gain.setValueAtTime(0.0001,t); camada.gain.setTargetAtTime(1,t+.2,ja?.3:1.2); camada.connect(musBus);
+    const E=ESTILOS[nome]; if(E&&E.amb) ambiente(E.amb,camada);
+    proxBar=t+.15; bar=0;
+  }
+  function agendar(){
+    if(!ctx || !estilo || !ativo || volMus<=0) { if(ctx) proxBar=Math.max(proxBar,ctx.currentTime+.1); return; }
+    const E=ESTILOS[estilo]; if(!E) return;
+    while(proxBar < ctx.currentTime+.6){ const i=bar%E.acordes.length; try{ E.compasso(proxBar,bar,E.acordes[i],i,camada); }catch(e){}
+      proxBar += 4*60/E.bpm; bar++; }
+  }
+  document.addEventListener('visibilitychange',()=>{ if(!ctx) return; if(document.hidden) ctx.suspend(); else if(ativo) ctx.resume(); });
+
+  /* ---------- efeitos ---------- */
+  const EF={
+    clique(t,d){ chiado(t,.025,.08,d,3800,null,3); osc('sine',1350,t,.04,.025,d); },
+    pagina(t,d){ chiado(t,.32,.07,d,900,4200,.8); },
+    ziper(t,d){ for(let k=0;k<9;k++) chiado(t+k*.032,.02,.09,d,2500+k*260,null,4); },
+    prova(t,d){ [72,76,79,84].forEach((m,k)=>vibra(m,t+k*.075,.12,d)); vibra(91,t+.35,.05,d); },
+    conquista(t,d){ [[60,64,67],[62,67,71],[64,67,72,76]].forEach((ac,k)=>ac.forEach(m=>{ const g=osc('sawtooth',hz(m),t+k*.16,k===2?1.1:.22,.05,d,.015,1800); if(eco) g.connect(eco); })); vibra(88,t+.34,.06,d); },
+    calor(t,d){ osc('sine',220,t,.22,.16,d,.01); osc('sine',165,t+.2,.4,.16,d,.01); chiado(t,.12,.08,d,180,null,1); },
+    alarme(t,d){ for(let k=0;k<3;k++){ osc('square',880,t+k*.22,.12,.05,d,.005,2200); osc('square',660,t+k*.22+.11,.1,.04,d,.005,2200); } },
+    moeda(t,d){ osc('sine',1568,t,.12,.12,d,.002); osc('sine',2093,t+.08,.5,.12,d,.002); osc('sine',4186,t+.08,.2,.03,d,.002); },
+    erro(t,d){ osc('square',110,t,.16,.05,d,.005,600); osc('square',98,t+.12,.2,.05,d,.005,600); },
+    alivio(t,d){ [79,76,72].forEach((m,k)=>vibra(m,t+k*.09,.09,d)); },
+    item(t,d){ piano(72,t,.12,d); piano(79,t+.06,.09,d); }
+  };
+  function efeito(nome){ if(!ctx || !ativo || volSfx<=0 || !EF[nome]) return; try{ EF[nome](ctx.currentTime+.01,sfxBus); }catch(e){} }
+
+  return {
+    efeito, contexto:trocar,
+    get ativo(){ return ativo; }, get musica(){ return volMus; },
+    alternar(){ ativo=!ativo; guardar(); iniciar(); aplicar(); return ativo; },
+    ciclarMusica(){ volMus = volMus>=.75?0:(volMus>=.45?.8:(volMus>0?.5:.25)); guardar(); aplicar(); return volMus; },
+    rotuloMusica(){ return volMus<=0?'sem música':volMus<.4?'baixa':volMus<.7?'média':'alta'; }
+  };
+})();
+/* clique em qualquer botão do jogo */
+document.addEventListener('click',e=>{ if(e.target.closest && e.target.closest('button:not(:disabled)')) som.efeito('clique'); },true);
+/* As mesas (perícia, bancada, operações) abrem por cima do #app sem passar pelo render(): um vigia troca a trilha. */
+let somBase='tema';
+function trilhaDaTela(){
+  if(mode==='modeselect') return 'tema';
+  if(mode==='interrogatorio'||mode==='heist'||mode==='revocation') return 'tensao';
+  return (S.season||1)>=7 ? 'sp' : 'rio';
+}
+setInterval(()=>{ som.contexto(document.getElementById('mesa-root')||document.getElementById('forja-root')||document.getElementById('op-root') ? 'tensao' : somBase); },1000);
+const ICONE_SOM_ON='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M3 8h3l4-3v10l-4-3H3z"/><path d="M13 7.5a3.5 3.5 0 0 1 0 5M15.5 5a7 7 0 0 1 0 10"/></svg>';
+const ICONE_SOM_OFF='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M3 8h3l4-3v10l-4-3H3z"/><path d="M13 8l4 4M17 8l-4 4"/></svg>';
+window.alternarSom = function(){ const on=som.alternar(); document.querySelectorAll('.mh-som').forEach(b=>{ b.innerHTML=on?ICONE_SOM_ON:ICONE_SOM_OFF; b.setAttribute('aria-pressed',String(on)); b.title=on?'Som ligado':'Som desligado'; }); };
+
 /* ===================== MENU DO JOGO ===================== */
 /* Os atalhos que antes ficavam soltos no rodapé, agrupados numa gaveta.
    Fica fora do #app para o render() não desmontá-la no meio do uso. */
@@ -15158,7 +15421,7 @@ window.abrirMenu = function(){
    ${grupo('Vincent',[emJogo&&it('openDossie()','✎','Dossiê pessoal','Perícias, relações e histórico'),it('openConquistas()','★','Conquistas','E os exclusivos que cada uma libera'),emJogo&&it('openEvidenceJournal()','⌗','Diário de evidências','Tudo o que já foi recolhido')])}
    ${grupo('Desafios',[it('openDaily()','☀','Perícia diária','Uma peça por dia'),it('openWeekly()','✦','Desafio semanal','A peça dura da semana')])}
    ${grupo('Aprender',[it('openManual()','❡','Manual do perito',''),it("openTutorial('pericia')",'?','Como jogar: perícia',''),it("openTutorial('forja')",'?','Como jogar: bancada',''),it("openTutorial('operacoes')",'?','Como jogar: operações','')])}
-   ${grupo('Jogo',[visual3D&&it('alternarVisual()','◐','Visual: '+(em3D?'3D':'clássico'),'Trocar entre cenas 3D e pintadas'),it('telaCheia()','⤢','Tela cheia',''),
+   ${grupo('Jogo',[visual3D&&it('alternarVisual()','◐','Visual: '+(em3D?'3D':'clássico'),'Trocar entre cenas 3D e pintadas'),it('alternarSom()','♪','Som: '+(som.ativo?'ligado':'desligado'),'Efeitos e trilha'),it('som.ciclarMusica()','♫','Música: '+som.rotuloMusica(),'Toque para mudar o volume'),it('telaCheia()','⤢','Tela cheia',''),
      S.modo==="campanha"&&S.checkpoint&&it('restartCaso()','↺','Reiniciar caso',''),S.modo==="campanha"&&S.seasonCheckpoint&&it('restartSeason()','↺','Reiniciar capítulo',''),
      emJogo&&it('resetGame()','⟲','Reiniciar o jogo','Apaga todo o progresso'),it('openDevJump()','⇥','Modo teste','Ir direto para um caso')])}
   </aside>`;
