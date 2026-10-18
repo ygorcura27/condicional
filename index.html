@@ -8334,11 +8334,11 @@ const TIPOS_PROVA={
 };
 function tipoProva(id){
   const t=(EVID[id]||'').toLowerCase();
-  if(/grava[cç][aã]o|[áa]udio|escuta/.test(t)) return 'audio';
-  if(/log de acesso|nuvem|base de dados|metadados|chip/.test(t)) return 'digital';
-  if(/^laudo|cotejo|amostra|exposto por [áa]cido|digital do|fragmento|secante|solvente/.test(t)) return 'laudo';
-  if(/extrato|planilha|ordem de pagamento|notas fiscais|cont[áa]b|ledger|recibo|cadeia societ|deb[êe]nture|doa[cç][õo]es|suborno|guias alfand/.test(t)) return 'financeiro';
-  if(/r[ée]plica|cristal|matriz|coroa|chapas|brinco|ferramenta|bolsa|selo falso/.test(t)) return 'objeto';
+  if(/^grava[cç][aã]o d|[áa]udio|escuta/.test(t)) return 'audio';
+  if(/log de acesso|nuvem|base de dados|metadados|chip|sensores/.test(t)) return 'digital';
+  if(/^(r[ée]plica|cristal|matriz|coroa|chapas|brinco|ferramenta|bolsa|pincel|projeto)/.test(t)) return 'objeto';
+  if(/^laudo|cotejo|amostra|exposto por [áa]cido|digital do|fragmento|secante/.test(t)) return 'laudo';
+  if(/extrato|planilha|ordem de pagamento|notas fiscais|cont[áa]b|ledger|cadeia societ|doa[cç][õo]es|suborno/.test(t)) return 'financeiro';
   return 'documento';
 }
 function partesProva(id){
