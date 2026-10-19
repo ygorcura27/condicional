@@ -973,6 +973,40 @@ html.menos-mov *,html.menos-mov *::before,html.menos-mov *::after{animation:none
 .choice-btn.ct-acao{border-left:4px solid var(--cc);background:#fbf3df}
 .choice-btn.ct-acao::before{color:var(--cc)}
 .livre-card .mc-ico{color:#2c5a5e;border-color:#2c5a5e;background:rgba(44,90,94,.12)}
+
+/* minigames */
+.mini-caixa{width:min(560px,100%)}
+.mini-corpo{padding:6px 18px 18px;overflow:auto}
+.mini-inst{color:#d6c9a8;font-size:.92rem;margin:0 0 12px} .mini-inst.min{font-size:.8rem;color:#9a8f78}
+.mini-area{min-height:120px}
+.mini-pe{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.mini-res{margin:0;font-weight:600} .mini-res.ok{color:#9fe0b0} .mini-res.ruim{color:#f0a090}
+.gz-pinos{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
+.gz-pinos i{width:16px;height:46px;border-radius:4px;background:#3a3428;border:1px solid #6a5a40;transition:transform .15s}
+.gz-pinos i.vez{border-color:var(--brassL);box-shadow:0 0 8px rgba(216,180,90,.5)} .gz-pinos i.ok{background:#5FA08C;transform:translateY(-10px)}
+.gz-trilho{position:relative;height:34px;border-radius:17px;background:#141a1e;border:1px solid #3a3428;overflow:hidden;cursor:pointer}
+.gz-trilho.erro{border-color:#e05a3a;box-shadow:0 0 10px rgba(224,90,58,.6)}
+.gz-zona{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,#6fd08a,#3f9a5c);opacity:.85}
+.gz-marca{position:absolute;top:-4px;bottom:-4px;width:4px;margin-left:-2px;background:#fff6e0;box-shadow:0 0 8px #fff}
+.gz-info{text-align:center;color:#9a8f78;font-size:.84rem;margin:10px 0}
+.gz-botao{display:block;margin:0 auto;padding:12px 30px;font-size:1rem}
+.lc-msg{text-align:center;color:#d6c9a8;margin:0 0 10px}
+.lc-seq{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
+.lc-seq span{width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;background:#f3e7cc;color:#2a2018;border:2px solid var(--brassD)}
+.lc-resp span{background:#141a1e;color:#9a8f78;border-color:#3a3428} .lc-resp span.ok{background:#e6f4ea;color:#2a5a3a;border-color:#5FA08C} .lc-resp span.ruim{background:#f8e0da;color:#9c3b22;border-color:#be4a33}
+.lc-bts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:300px;margin:0 auto}
+.lc-bts button{height:52px;font-size:1.5rem;border-radius:8px;cursor:pointer;background:#1e1810;color:#f3e7cc;border:1px solid #6a5a40}
+.lc-bts button:hover{border-color:var(--brassL)}
+.cr-topo{display:flex;justify-content:space-between;color:#d6c9a8;font-size:.86rem;margin:0 0 8px}
+.cr-tela{display:block;margin:0 auto;width:min(360px,100%);height:auto;border-radius:6px;border:1px solid #3a3428;touch-action:none}
+.cr-bts{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.cr-bts .it-btn{padding:12px 18px}
+.mt-topo{color:#d6c9a8;font-size:.86rem;margin:0 0 8px} .mt-rel{color:#f0b04a}
+.mt-fatos{background:#f3e7cc;color:#2a2018;border-radius:6px;padding:10px 12px;margin-bottom:10px;display:grid;gap:3px}
+.mt-fatos b{font-family:var(--titulo);letter-spacing:.14em;font-size:.85rem;color:#6b5b45}
+.mt-fatos span i{font-style:normal;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8a7a5a;margin-right:8px}
+.mt-frases{display:flex;flex-direction:column;gap:7px}
+.mt-frases .choice-btn.mt-ok{background:#e6f4ea;border-color:#5FA08C} .mt-frases .choice-btn.mt-erro{background:#f8e0da;border-color:#be4a33}
 </style>
 </head>
 <body>
@@ -981,6 +1015,8 @@ html.menos-mov *,html.menos-mov *::before,html.menos-mov *::after{animation:none
 /* ===================== CONFIGURAÇÕES =====================
    Tamanho do texto, movimento e qualidade do 3D, guardados no navegador.
    O som tem a própria preferência (window.som). */
+/* Uma mesa ou um minigame cobre a tela inteira: as cenas 3D por baixo param de desenhar. */
+function telaCoberta(){ return !!(document.getElementById('mini')||document.getElementById('mesa-root')||document.getElementById('forja-root')||document.getElementById('op-root')||document.getElementById('op3d-exec')); }
 function lerCfg(){ try{ return Object.assign({texto:'normal',movimento:'auto',grafico:'auto'}, JSON.parse(localStorage.getItem('condicional_cfg')||'{}')); }catch(e){ return {texto:'normal',movimento:'auto',grafico:'auto'}; } }
 function gravarCfg(c){ try{ localStorage.setItem('condicional_cfg', JSON.stringify(c)); }catch(e){} aplicarCfg(); }
 function menosMovimento(){ const c=lerCfg(); if(c.movimento==='reduzido') return true; if(c.movimento==='normal') return false; return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
@@ -15740,10 +15776,142 @@ window.fecharMenu = function(ja){
 
 
 
+
+/* ===================== MINIGAMES DE RUA =====================
+   Jogos curtos para as missões de deslocamento: gazua (tempo), lacre (memória),
+   trânsito/perseguição (reflexo) e pegar a mentira (atenção). As perícias do
+   Vincent ajudam um pouco, sem resolver sozinhas. cb(sucesso) ao fim. */
+const MINI={
+  gazua:{t:'Gazua', per:'infiltracao', inst:'Toque (ou aperte Espaço) quando o marcador estiver na faixa verde. Quatro pinos; dois erros e a fechadura trava.'},
+  lacre:{t:'Conferir o lacre', per:'percepcao', inst:'Memorize a sequência de selos e repita na mesma ordem. Duas tentativas.'},
+  transito:{t:'Atravessar o trânsito', per:'infiltracao', inst:'Desvie dos carros trocando de faixa: setas ←/→ (ou A/D), ou toque nos lados da pista. Uma batida é tolerada; a segunda atrasa a entrega.'},
+  perseguicao:{t:'Despistar a viatura', per:'infiltracao', inst:'Uma viatura vem atrás. Desvie do tráfego até sumir na cidade: setas ←/→ ou toque nos lados. Uma batida é tolerada.'},
+  mentira:{t:'Pegar a mentira', per:'labia', inst:'Leia o que já se sabe. A testemunha diz três coisas: toque na que não bate. Três rodadas; acerte duas.'}
+};
+let miniAtual=null;
+window.jogarMini = function(tipo,cb){
+  if(window.__miniAuto) { cb(window.__miniAuto(tipo)); return; }   // testes automáticos
+  const M=MINI[tipo]; const nivel=pericia(M.per);
+  let el=document.getElementById('mini'); if(el) el.remove();
+  el=document.createElement('div'); el.id='mini'; el.className='modal-jogo'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label',M.t);
+  el.innerHTML=`<div class="mj-fundo"></div><div class="mo-caixa mj-pequena mini-caixa">
+    <header class="mo-topo"><span class="mo-titulo"><b>${M.t}</b></span><span class="mo-sub">${NOME_PERICIA[M.per]} ${nivel} ajuda nesta prova</span></header>
+    <div class="mini-corpo"><p class="mini-inst">${M.inst}</p><div class="mini-area" id="mini-area"></div>
+     <div class="mini-pe"><button type="button" class="it-btn" id="mini-comecar">Começar</button></div></div></div>`;
+  document.body.appendChild(el); document.body.classList.add('mj-aberto'); requestAnimationFrame(()=>el.classList.add('on'));
+  miniAtual={tipo,cb,nivel,fim:false,limpa:[]};
+  el.querySelector('#mini-comecar').onclick=function(){ this.remove(); el.querySelector('.mini-inst').classList.add('min'); JOGOS_MINI[tipo](el.querySelector('#mini-area'),nivel,miniFim); };
+  el.querySelector('#mini-comecar').focus();
+};
+function miniFim(ok,msg){
+  const m=miniAtual; if(!m||m.fim) return; m.fim=true; m.limpa.forEach(f=>{ try{f();}catch(e){} });
+  som.efeito(ok?'moeda':'erro');
+  const el=document.getElementById('mini'); if(!el) return;
+  el.querySelector('.mini-pe').innerHTML=`<p class="mini-res ${ok?'ok':'ruim'}">${ok?'Conseguiu.':'Não deu.'} ${msg||''}</p><button type="button" class="it-btn" id="mini-ok">Continuar</button>`;
+  el.querySelector('#mini-ok').onclick=()=>{ document.body.classList.remove('mj-aberto'); el.remove(); miniAtual=null; m.cb(ok); };
+  el.querySelector('#mini-ok').focus();
+}
+const JOGOS_MINI={
+  gazua(area,nv,fim){
+    const pinos=4; let pino=0, erros=0, x=0, dir=1, larg=Math.min(.32,.15+nv*.012), ini=.25+Math.random()*.5, vel=.55, raf;
+    area.innerHTML=`<div class="gz-pinos">${Array.from({length:pinos},(_,i)=>`<i data-p="${i}"></i>`).join('')}</div><div class="gz-trilho"><span class="gz-zona"></span><span class="gz-marca"></span></div><p class="gz-info">Erros: 0 de 2</p><button type="button" class="it-btn gz-botao">Girar</button>`;
+    const zona=area.querySelector('.gz-zona'), marca=area.querySelector('.gz-marca'), info=area.querySelector('.gz-info');
+    const poe=()=>{ zona.style.left=(ini*100)+'%'; zona.style.width=(larg*100)+'%'; area.querySelectorAll('.gz-pinos i').forEach((e,i)=>e.className=i<pino?'ok':i===pino?'vez':''); };
+    poe(); let ant=performance.now();
+    const passo=t=>{ const dt=Math.min(.05,(t-ant)/1000); ant=t; x+=dir*vel*dt; if(x>1){x=1;dir=-1;} if(x<0){x=0;dir=1;} marca.style.left=(x*100)+'%'; raf=requestAnimationFrame(passo); };
+    raf=requestAnimationFrame(passo); miniAtual.limpa.push(()=>cancelAnimationFrame(raf));
+    const gira=()=>{ if(miniAtual.fim) return;
+      if(x>=ini && x<=ini+larg){ pino++; som.efeito('clique'); if(pino>=pinos){ poe(); fim(true,'A fechadura cede sem um arranhão.'); return; }
+        larg=Math.max(.08,larg*.85); vel*=1.18; ini=.05+Math.random()*(.9-larg); }
+      else { erros++; info.textContent='Erros: '+erros+' de 2'; area.querySelector('.gz-trilho').classList.add('erro'); setTimeout(()=>area.querySelector('.gz-trilho')&&area.querySelector('.gz-trilho').classList.remove('erro'),250);
+        if(erros>=2){ fim(false,'A gazua escorrega e trava o miolo.'); return; } }
+      poe(); };
+    area.querySelector('.gz-botao').onclick=gira; area.querySelector('.gz-trilho').onclick=gira;
+    const tecla=e=>{ if(e.code==='Space'||e.key===' '){ e.preventDefault(); gira(); } }; addEventListener('keydown',tecla); miniAtual.limpa.push(()=>removeEventListener('keydown',tecla));
+    area.querySelector('.gz-botao').focus();
+  },
+  lacre(area,nv,fim){
+    const SIMB=['◆','●','▲','■','★','✚','☾','♣'], n=5; let tent=0;
+    const rodada=()=>{ tent++; const seq=Array.from({length:n},()=>SIMB[Math.floor(Math.random()*SIMB.length)]); let pos=0;
+      area.innerHTML=`<p class="lc-msg">Tentativa ${tent} de 2 — memorize:</p><div class="lc-seq">${seq.map(c=>`<span>${c}</span>`).join('')}</div>`;
+      const t=setTimeout(()=>{ if(miniAtual.fim) return;
+        area.innerHTML=`<p class="lc-msg">Repita a sequência:</p><div class="lc-seq lc-resp">${seq.map(()=>'<span>·</span>').join('')}</div><div class="lc-bts">${SIMB.map(c=>`<button type="button" data-c="${c}">${c}</button>`).join('')}</div>`;
+        area.querySelectorAll('.lc-bts button').forEach(b=>b.onclick=()=>{ if(miniAtual.fim) return; const c=b.dataset.c, sp=area.querySelectorAll('.lc-resp span');
+          if(c===seq[pos]){ sp[pos].textContent=c; sp[pos].className='ok'; pos++; som.efeito('clique'); if(pos>=n) fim(true,'Lacre conferido: ninguém trocou a carga.'); }
+          else { sp[pos].textContent=c; sp[pos].className='ruim'; if(tent>=2) fim(false,'A sequência não fecha. Você leva a carga sem saber se é a certa.'); else setTimeout(rodada,700); } });
+      }, 2600+nv*180);
+      miniAtual.limpa.push(()=>clearTimeout(t)); };
+    rodada();
+  },
+  transito(area,nv,fim){ corrida(area,nv,fim,{dur:20,vidas:2,vel:5.2,rit:.9,tipo:'trafego'}); },
+  perseguicao(area,nv,fim){ corrida(area,nv,fim,{dur:24,vidas:2,vel:6.2,rit:.75,tipo:'viatura'}); },
+  mentira(area,nv,fim){
+    const POOL={hora:['às nove da noite','de madrugada, perto das três','logo depois do almoço','no fim da tarde'],
+      carro:['um Opala preto','uma Kombi branca','um táxi amarelo','uma moto vermelha'],
+      lugar:['pela porta dos fundos','pelo portão da garagem','pelo cais','pela escada de incêndio'],
+      pessoa:['um homem de chapéu','uma mulher de casaco verde','dois rapazes de boné','um senhor de bengala'],
+      coisa:['uma caixa comprida','uma maleta de couro','um tubo de desenho','um embrulho em jornal']};
+    const FRASE={hora:v=>`“Foi ${v}, eu lembro bem.”`, carro:v=>`“Parou ali na frente ${v}.”`, lugar:v=>`“Entraram ${v}.”`, pessoa:v=>`“Quem estava lá era ${v}.”`, coisa:v=>`“Saíram carregando ${v}.”`};
+    const ROT={hora:'Hora',carro:'Veículo',lugar:'Entrada',pessoa:'Quem',coisa:'O que levaram'};
+    let r=0, acertos=0;
+    const rodada=()=>{ r++; const ks=Object.keys(POOL).sort(()=>Math.random()-.5).slice(0,3), fato={}; ks.forEach(k=>fato[k]=POOL[k][Math.floor(Math.random()*4)]);
+      const falsa=ks[Math.floor(Math.random()*3)], outros=POOL[falsa].filter(v=>v!==fato[falsa]), dito=Object.assign({},fato,{[falsa]:outros[Math.floor(Math.random()*outros.length)]});
+      const tempo=10+Math.min(8,nv); let resta=tempo;
+      area.innerHTML=`<p class="mt-topo">Rodada ${r} de 3 · acertos ${acertos} · <b class="mt-rel">${resta}s</b></p>
+        <div class="mt-fatos"><b>O que já se sabe</b>${ks.map(k=>`<span><i>${ROT[k]}</i>${fato[k]}</span>`).join('')}</div>
+        <div class="mt-frases">${ks.sort(()=>Math.random()-.5).map(k=>`<button type="button" class="choice-btn" data-k="${k}">${FRASE[k](dito[k])}</button>`).join('')}</div>`;
+      const rel=area.querySelector('.mt-rel'), iv=setInterval(()=>{ resta--; if(rel) rel.textContent=resta+'s'; if(resta<=0){ clearInterval(iv); prox(false); } },1000);
+      miniAtual.limpa.push(()=>clearInterval(iv));
+      const prox=ok=>{ clearInterval(iv); if(ok) acertos++; const errou=(r-acertos);
+        if(acertos>=2){ fim(true,'A testemunha se contradiz e acaba contando o resto.'); return; }
+        if(errou>=2){ fim(false,'Você engole a versão dela. A pista sai torta.'); return; } setTimeout(rodada,500); };
+      area.querySelectorAll('.mt-frases button').forEach(b=>b.onclick=()=>{ if(miniAtual.fim) return; const ok=b.dataset.k===falsa; b.classList.add(ok?'mt-ok':'mt-erro'); som.efeito(ok?'clique':'erro'); setTimeout(()=>prox(ok),350); }); };
+    rodada();
+  }
+};
+/* corrida de três faixas em canvas (trânsito e perseguição) */
+function corrida(area,nv,fim,cfg){
+  area.innerHTML=`<p class="cr-topo"><span class="cr-vidas"></span><span class="cr-tempo"></span></p><canvas class="cr-tela" width="360" height="420" aria-label="Pista"></canvas>
+    <div class="cr-bts"><button type="button" class="it-btn" data-d="-1">◀ Esquerda</button><button type="button" class="it-btn" data-d="1">Direita ▶</button></div>`;
+  const cv=area.querySelector('canvas'), g=cv.getContext('2d'), W=360, H=420, LX=[W*.2,W*.5,W*.8];
+  let faixa=1, px=LX[1], obs=[], t=0, prox=.6, vidas=cfg.vidas, inv=0, raf, ant=performance.now(), faixaChao=0;
+  const vel=cfg.vel*(1-Math.min(.25,nv*.02));   // perícia alta deixa o tráfego um pouco mais lento
+  const mover=d=>{ faixa=Math.max(0,Math.min(2,faixa+d)); };
+  const hud=()=>{ area.querySelector('.cr-vidas').textContent='Batidas toleradas: '+Math.max(0,vidas-1); area.querySelector('.cr-tempo').textContent=Math.max(0,Math.ceil(cfg.dur-t))+'s'; };
+  const carro=(x,y,cor,viat)=>{ g.fillStyle='rgba(0,0,0,.35)'; g.fillRect(x-17,y-26,38,56); g.fillStyle=cor; g.fillRect(x-19,y-30,38,58); g.fillStyle='#1a2630'; g.fillRect(x-14,y-18,28,12); g.fillRect(x-14,y+12,28,8);
+    if(viat){ g.fillStyle='#fff'; g.fillRect(x-19,y-4,38,8); g.fillStyle=(Math.floor(t*8)%2)?'#3a7bff':'#ff3a3a'; g.fillRect(x-8,y-6,16,4); } };
+  const quadro=tm=>{ const dt=Math.min(.05,(tm-ant)/1000); ant=tm; if(miniAtual.fim) return; t+=dt; faixaChao=(faixaChao+vel*60*dt)%60;
+    px+=(LX[faixa]-px)*Math.min(1,dt*14); prox-=dt;
+    if(prox<=0 && t<cfg.dur-1.2){ const livres=[0,1,2].sort(()=>Math.random()-.5); const n=Math.random()<.35+t/cfg.dur*.3?2:1; for(let k=0;k<n;k++) obs.push({f:livres[k],y:-40,cor:cfg.tipo==='viatura'&&Math.random()<.35?'viat':['#e0b83c','#c84a3a','#4a7ab8','#d8d4c8','#3a6a4a'][Math.floor(Math.random()*5)]}); prox=cfg.rit*(1-t/cfg.dur*.35)+Math.random()*.25; }
+    obs.forEach(o=>o.y+=vel*60*dt); obs=obs.filter(o=>o.y<H+50);
+    if(inv>0) inv-=dt; else for(const o of obs){ if(Math.abs(LX[o.f]-px)<30 && Math.abs(o.y-(H-70))<50){ vidas--; inv=1.1; som.efeito('erro'); if(vidas<=0){ desenha(); fim(false, cfg.tipo==='viatura'?'A viatura encosta. Você larga a carga e sai a pé.':'A batida custa tempo e a entrega atrasa.'); return; } break; } }
+    desenha(); hud();
+    if(t>=cfg.dur){ fim(true, cfg.tipo==='viatura'?'Você some numa transversal e a sirene passa direto.':'Entrega no horário.'); return; }
+    raf=requestAnimationFrame(quadro); };
+  const desenha=()=>{ g.fillStyle='#2a2d30'; g.fillRect(0,0,W,H); g.fillStyle='#3a6a3a'; g.fillRect(0,0,22,H); g.fillRect(W-22,0,22,H);
+    g.fillStyle='#e8e0c8'; for(const x of [W*.35,W*.65]) for(let y=-60+faixaChao;y<H;y+=60) g.fillRect(x-2,y,4,30);
+    obs.forEach(o=>carro(LX[o.f],o.y,o.cor==='viat'?'#151515':o.cor,o.cor==='viat'));
+    if(!(inv>0 && Math.floor(t*12)%2)) carro(px,H-70,'#8ab8d8',false);
+    if(cfg.tipo==='viatura'){ const a=.25+.25*Math.sin(t*10); g.fillStyle=`rgba(255,40,40,${a})`; g.fillRect(0,H-12,W,12);
+      const dist=Math.max(0,1-t/cfg.dur); carro(LX[1]+Math.sin(t*1.7)*W*.25, H+10-dist*24+(cfg.vidas-vidas)*-14, '#151515', true); } };
+  area.querySelectorAll('.cr-bts button').forEach(b=>b.onclick=()=>mover(+b.dataset.d));
+  cv.addEventListener('pointerdown',e=>{ const r=cv.getBoundingClientRect(); mover(e.clientX-r.left<r.width/2?-1:1); });
+  const tecla=e=>{ if(['ArrowLeft','KeyA'].includes(e.code)){ e.preventDefault(); mover(-1); } if(['ArrowRight','KeyD'].includes(e.code)){ e.preventDefault(); mover(1); } };
+  addEventListener('keydown',tecla); miniAtual.limpa.push(()=>{ removeEventListener('keydown',tecla); cancelAnimationFrame(raf); });
+  if(window.__miniDebug) window.__miniDebug={obs:()=>obs, faixa:()=>faixa, mover, LX, H};   // só para testes automáticos
+  hud(); desenha(); raf=requestAnimationFrame(quadro);
+}
+
 /* ===================== MODO LIVRE (SANDBOX) =====================
    Sem história: a cidade inteira aberta, um quadro de contratos que se renova
    todo dia e as mesas do jogo sorteando casos. Dinheiro, Calor, itens, roupas,
    veículos e serviços sujos funcionam igual; o tempo corre sem fim. */
+/* de que cidade é cada caso das mesas (pelo capítulo que o usa); encomendas da bancada valem nas duas */
+const CASOS_DA_CIDADE={
+  rio:['bau_wehmuth','mulheres_janela','prancha_debret','profeta_pedra_sabao','diario_talude9','estudo_retirantes','coroa_pedro_ii','primeira_missa','bonde_santa_teresa','cerco_chopin'],
+  sp:['barra_a114','boba_copia','lavrador_segunda','versao_buenos_aires','escritura_higienopolis','manto_imperial','testamento_prado','urna_marajoara','estudo_independencia','foto_ferrez','pena_abolicao','cetro_imperial','racks_paulista','saida_interlagos']
+};
+function daCidade(lista){ const ok=CASOS_DA_CIDADE[S.sandbox.cidade]||[]; const f=lista.filter(c=>ok.includes(c.chave)); return f.length?f:lista; }
 const LIVRE_FONTES={rio:()=>[LOCS,LOCS_S2,LOCS_S4,LOCS_S6], sp:()=>[LOCS_S7,LOCS_S8,LOCS_S9,LOCS_S10,LOCS_S11,LOCS_S12]};
 let _locaisLivres=null, _locaisLivresCid=null;
 function locaisLivres(){
@@ -15770,9 +15938,9 @@ function novoContrato(){
   const L=locaisSorteaveis(), loc=R_LIVRE(L), n=nivelLivre(), k=1+0.12*(n-1);
   const id='c'+(++sb.seq);
   const base={id, tipo, prazo:S.day+R_LIVRE([2,3,3,4]), etapa:0};
-  if(tipo==='pericia'){ const c=R_LIVRE(CASOS); return Object.assign(base,{caso:c.chave, loc, titulo:'Laudo: '+c.titulo, desc:`A PF quer um laudo sobre ${c.titulo}${c.autor?', atribuída a '+c.autor:''}. A peça está em ${nomeLocal(loc)}.`, paga:Math.round((1800+600*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
+  if(tipo==='pericia'){ const c=R_LIVRE(daCidade(CASOS)); return Object.assign(base,{caso:c.chave, loc, titulo:'Laudo: '+c.titulo, desc:`A PF quer um laudo sobre «${c.titulo}»${c.autor?' ('+c.autor+')':''}. A peça está em ${nomeLocal(loc)}.`, paga:Math.round((1800+600*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
   if(tipo==='forja'){ const c=R_LIVRE(FORJAS); return Object.assign(base,{caso:c.chave, loc, titulo:'Encomenda: '+c.titulo, desc:`Um cliente do Nelson quer ${c.titulo.toLowerCase()}. A bancada fica montada em ${nomeLocal(loc)}. Paga bem; passa por perícia na entrega.`, paga:Math.round((4000+1500*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
-  if(tipo==='operacao'){ const c=R_LIVRE(OPERACOES); return Object.assign(base,{caso:c.chave, loc, titulo:'Operação: '+c.titulo, desc:`A PF precisa de um plano de campo. Briefing em ${nomeLocal(loc)}.`, paga:Math.round((2500+800*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
+  if(tipo==='operacao'){ const c=R_LIVRE(daCidade(OPERACOES)); return Object.assign(base,{caso:c.chave, loc, titulo:'Operação: '+c.titulo, desc:`A PF precisa de um plano de campo. Briefing em ${nomeLocal(loc)}.`, paga:Math.round((2500+800*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
   if(tipo==='entrega'||tipo==='contrabando'){ let b=R_LIVRE(L); while(b===loc && L.length>1) b=R_LIVRE(L);
     const sujo=tipo==='contrabando', oque= sujo ? R_LIVRE(['uma caixa lacrada que ninguém quer abrir','um tubo de desenho com um “estudo” dentro','uma pasta com documentos de procedência','uma maleta pesada demais para papéis']) : R_LIVRE(['uma moldura antiga para restauro','os documentos de um leilão','um catálogo raro','uma caixa de pigmentos importados']);
     return Object.assign(base,{loc, locs:[loc,b], titulo:(sujo?'Contrabando: ':'Entrega: ')+oque, desc:`Pegar ${oque} em ${nomeLocal(loc)} e levar até ${nomeLocal(b)}.${sujo?' Sem perguntas — e sem nota.':''}`, paga:Math.round((sujo?5000:1600)*k/100)*100}); }
@@ -15781,7 +15949,7 @@ function novoContrato(){
   const assunto=R_LIVRE(['o sumiço de uma gravura do acervo de um banco','uma tela segurada por dez vezes o valor','um roubo de joias que a seguradora acha armado','o comprador anônimo de três peças do mesmo pintor']);
   return Object.assign(base,{loc:alvos[0], locs:alvos.concat(['pf']), titulo:'Investigação: '+assunto, desc:`A seguradora paga por informação sobre ${assunto}. Ouça gente em ${alvos.map(nomeLocal).join(', ')} e entregue o relatório na ${nomeLocal('pf')}.`, paga:Math.round(4500*k/100)*100, pistas:0});
 }
-function reporQuadro(){ const sb=S.sandbox; sb.quadro=(sb.quadro||[]).filter(c=>c.prazo>=S.day); let t=0;
+function reporQuadro(){ const sb=S.sandbox, daqui=CASOS_DA_CIDADE[sb.cidade]||[]; sb.quadro=(sb.quadro||[]).filter(c=>c.prazo>=S.day && (!c.caso||c.tipo==='forja'||daqui.includes(c.caso))); let t=0;
   while(sb.quadro.length<5 && t++<60){ const c=novoContrato(); if(!sb.quadro.concat(sb.ativos).some(x=>x.titulo===c.titulo)) sb.quadro.push(c); else sb.seq--; } }
 window.iniciarLivre = function(cidade){
   S=newState(); S.modo='campanha'; S.sandbox={cidade, seq:0, quadro:[], ativos:[], feitos:0, falhas:0};
@@ -15873,17 +16041,26 @@ window.executarContrato = function(id){
   if(c.tipo==='operacao'){ const caso=OPERACOES.find(x=>x.chave===c.caso);
     startOperacao(caso,(grau)=>{ const f=grau==='executada'?1:grau==='improvisada'?.5:0;
       pagarContrato(c,f, grau==='executada'?'Operação limpa.':grau==='improvisada'?'Saiu no improviso: pagam metade.':'O alvo escapou.', grau==='perdida'?{confianca:-6}:{confianca:grau==='executada'?5:1}); voltar(); }); return; }
-  if(c.tipo==='entrega'||c.tipo==='contrabando'){
-    if(c.etapa===0){ const sujo=c.tipo==='contrabando';
-      if(sujo && !skillCheck(pericia('infiltracao'),5)){ pagarContrato(c,0,'Uma viatura para no meio da coleta. Você larga a carga e sai andando.',{calor:15}); voltar(); return; }
-      c.etapa=1; resultadoLivre=`Carga na mão. Agora para <b>${nomeLocal(c.locs[1])}</b>.${sujo?' <i>(Calor +4)</i>':''}`; if(sujo) S.meters.calor=clamp(S.meters.calor+4);
-      save(); render(); return; }
-    pagarContrato(c,1,'Entregue, conferido, pago.', c.tipo==='contrabando'?{integridade:-8,submundo:4}:{}); voltar(); return; }
-  // investigação
-  if(c.etapa<3){ const k=R_LIVRE(['percepcao','rede','labia']), ok=skillCheck(pericia(k),5);
-    if(ok) c.pistas=(c.pistas||0)+1; c.etapa++;
-    resultadoLivre= (ok?`Você arranca uma boa informação (${NOME_PERICIA[k]}).`:`Ninguém fala nada que preste (${NOME_PERICIA[k]}).`)+` Próximo: <b>${nomeLocal(c.locs[c.etapa])}</b>.`;
-    save(); avancarLivre(true); return; }
+  if(c.tipo==='entrega'||c.tipo==='contrabando'){ const sujo=c.tipo==='contrabando';
+    if(c.etapa===0){
+      jogarMini(sujo?'gazua':'lacre', ok=>{
+        if(!ok && sujo){ pagarContrato(c,0,'O depósito ficou fechado e um vigia viu você mexendo na porta.',{calor:15}); voltar(); return; }
+        c.etapa=1; if(!ok) c.lacreRuim=true; if(sujo) S.meters.calor=clamp(S.meters.calor+4);
+        resultadoLivre=`${ok?'Carga na mão.':'Carga na mão, mas sem conferir o lacre: o cliente vai descontar.'} Agora para <b>${nomeLocal(c.locs[1])}</b>.${sujo?' <i>(Calor +4)</i>':''}`;
+        save(); render(); });
+      return; }
+    jogarMini(sujo?'perseguicao':'transito', ok=>{
+      if(sujo) { if(ok) pagarContrato(c,1,'Carga entregue no escuro, pagamento em envelope.',{integridade:-8,submundo:4});
+                 else pagarContrato(c,0,'A viatura te alcança; a carga fica para trás.',{calor:20}); }
+      else { const f=(ok?1:.6)*(c.lacreRuim?.7:1); pagarContrato(c,f, ok&&!c.lacreRuim?'Entregue, conferido, pago.':'Entregue, mas com desconto (atraso ou lacre não conferido).', {}); }
+      voltar(); });
+    return; }
+  // investigação: em cada lugar, pegar a testemunha na mentira
+  if(c.etapa<3){
+    jogarMini('mentira', ok=>{ if(ok) c.pistas=(c.pistas||0)+1; c.etapa++;
+      resultadoLivre=(ok?'Você pega a testemunha na contradição e arranca uma boa informação.':'A conversa não rende nada que preste.')+` Próximo: <b>${nomeLocal(c.locs[c.etapa])}</b>.`;
+      save(); avancarLivre(true); });
+    return; }
   const f=[0,.4,.75,1][c.pistas||0]; pagarContrato(c,f, `Relatório entregue com ${c.pistas||0} de 3 pistas sólidas.`, f>0?{confianca:2}:null); voltar();
 };
 window.descansarLivre = function(){ S.meters.calor=clamp(S.meters.calor-10); S.period=2; resultadoLivre='Uma noite inteira de sono. A tornozeleira pisca verde.'; avancarLivre(true); };
@@ -17134,6 +17311,7 @@ const relogio={ant:0};
 function quadro(ts){
   if(!st.ativo) return;
   if(!M.cont.isConnected){ st.ativo=false; return; }      // o jogo trocou de tela: pausa
+  if(telaCoberta()){ relogio.ant=0; st.raf=requestAnimationFrame(quadro); return; }   // mesa ou minigame por cima: não desenha
   const t=ts/1000, dtReal=Math.min(.5, relogio.ant? t-relogio.ant : .016), dt=Math.min(.05,dtReal); relogio.ant=t;
   const n=hora(dt);
   if(!reduzMov()){ const a=M.aguaPos.array, b=M.aguaBase; for(let k=0;k<a.length;k+=3) a[k+1]=b[k+1]+Math.sin(b[k]*.7+t*1.3)*.035+Math.cos(b[k+2]*.9+t*1.1)*.03; M.aguaPos.needsUpdate=true; M.espuma.material.opacity=.35+.25*Math.sin(t*1.7); }
@@ -18637,8 +18815,8 @@ const reduz=()=> menosMovimento();
 function quadro(ts){
   if(!st.ativo) return;
   if(!R.cont.isConnected){ st.ativo=false; return; }
-  // a mesa de operações cobre a tela: a cena espera por baixo
-  if(document.getElementById('op-root')||document.getElementById('op3d-exec')){ st.ant=0; requestAnimationFrame(quadro); return; }
+  // uma mesa ou um minigame cobre a tela: a cena espera por baixo
+  if(telaCoberta()){ st.ant=0; requestAnimationFrame(quadro); return; }
   const t=ts/1000, dt=Math.min(.05, st.ant? t-st.ant : .016); st.ant=t;
   const d=R.cenas[st.loc]; if(!d){ st.ativo=false; return; }
   if(!reduz()){
