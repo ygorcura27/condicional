@@ -16412,11 +16412,20 @@ function montarMundo(){
   const espuma=new THREE.InstancedMesh(geoEsp,new THREE.MeshBasicMaterial({color:0xeaf4f7,transparent:true,opacity:.5,depthWrite:false}),esp.length);
   esp.forEach(([x,z],k)=>{ const dz=ehOceano(x,z+1)?.6:ehOceano(x,z-1)?-.6:0, dx=ehOceano(x+1,z)?.6:ehOceano(x-1,z)?-.6:0; m4.makeRotationY(dx?Math.PI/2:0); m4.setPosition(x+.5+dx,.1,z+.5+dz); espuma.setMatrixAt(k,m4); });
   scene.add(espuma);
+  /* a casa de telhado roxo em Paquetá: um terreno de terra da ilha, perto do ponto da barca */
+  CID.casaRoxa=null;
+  if(CID.id==='rio' && LUGARES.paqueta){ const lp=LUGARES.paqueta; let melhor=null;
+    // de frente para o mar (nada na frente da porta), o mais perto possível do cais
+    for(let z=0;z<=6;z++) for(let x=64;x<=72;x++){ if(!tiles[z]||tiles[z][x]!=='terra'||reservado[z][x]) continue;
+      const d=Math.hypot(x-lp.x,z-lp.z); if(d<1.6) continue; const frente=tiles[z+1]&&tiles[z+1][x];
+      const nota=d - (frente==='agua'||frente==='praia'?10:0) - z*.5; if(!melhor||nota<melhor.n) melhor={x,z,d,n:nota}; }
+    CID.casaRoxa=melhor; }
   /* prédios por bairro */
   const lotes=[];
   for(let z=0;z<H;z++) for(let x=0;x<W;x++){ if(tiles[z][x]!=='terra'||reservado[z][x]) continue;
     const l=CID.lote(x,z,rnd,G); if(!l) continue; if(l==='praca'){ tiles[z][x]='praca'; continue; } const h=l.h, est= l.est==='residencial' && h>=4 && (x*3+z*7)%3!==0 ? 'varanda' : l.est;
     if(rnd()<.08){ tiles[z][x]='praca'; continue; }
+    if(CID.casaRoxa && x===CID.casaRoxa.x && z===CID.casaRoxa.z){ rnd(); rnd(); tiles[z][x]='praca'; continue; }   // o terreno fica livre para a casa (os dois rnd mantêm o resto da cidade igual)
     lotes.push({x,z,h,est,y:topo(x,z),w:.72+rnd()*.18,d:.72+rnd()*.18}); }
   const matsPredio={}; Object.keys(ESTILOS).forEach(k=>{ matsPredio[k]=new THREE.MeshStandardMaterial({map:ESTILOS[k].base,emissiveMap:ESTILOS[k].luz,emissive:0xffffff,emissiveIntensity:1.15,roughness:.82,metalness:k==='vidro'?.35:.05}); });
   const cacheGeo={};
@@ -16513,6 +16522,28 @@ function montarMundo(){
       const tt=new THREE.Mesh(new THREE.BoxGeometry(.46,.05,.36),mat(0xe0b83c)); tt.position.y=.17; const ch=new THREE.Mesh(new THREE.BoxGeometry(.46,.05,.36),mat(0xe0b83c)); ch.position.y=-.17; const h=new THREE.Mesh(new THREE.BoxGeometry(.03,.22,.03),mat(0x333333)); h.position.y=.3;
       b.add(vid,tt,ch,h); scene.add(b); b.userData.f=f; return b; });
     rotulo('Pão de Açúcar',57.9,8.8,44.2); rotulo('Morro da Urca',53.6,4.6,43.4);
+    if(CID.casaRoxa){ // Paquetá: casa de telhado roxo, com um casal à porta
+      const cx=CID.casaRoxa.x+.5, cz=CID.casaRoxa.z+.5, y0=yTopo(cx,cz), casa=new THREE.Group();
+      const parede=mat(0xf2ead8), roxo=mat(0x3c1258,{roughness:.6}), madeira=mat(0x5a3a22), vidroC=mat(0x2a3a48,{emissive:0xffd890,emissiveIntensity:.25});
+      const corpo=new THREE.Mesh(new THREE.BoxGeometry(.9,.62,.7),parede); corpo.position.y=.31; casa.add(corpo);
+      const fr=new THREE.Shape(); fr.moveTo(-.52,0); fr.lineTo(0,.38); fr.lineTo(.52,0); fr.lineTo(-.52,0);
+      const tel=new THREE.Mesh(new THREE.ExtrudeGeometry(fr,{depth:.84,bevelEnabled:false}),roxo); tel.position.set(0,.62,-.42); casa.add(tel);
+      const beiral=new THREE.Mesh(new THREE.BoxGeometry(1.06,.03,.86),roxo); beiral.position.y=.625; casa.add(beiral);
+      const porta=new THREE.Mesh(new THREE.BoxGeometry(.18,.34,.02),madeira); porta.position.set(0,.17,.36); casa.add(porta);
+      for(const x of [-.3,.3]){ const j=new THREE.Mesh(new THREE.BoxGeometry(.16,.16,.02),vidroC); j.position.set(x,.38,.36); casa.add(j);
+        const ab=new THREE.Mesh(new THREE.BoxGeometry(.2,.03,.03),roxo); ab.position.set(x,.47,.37); casa.add(ab); }
+      const deg=new THREE.Mesh(new THREE.BoxGeometry(.4,.04,.16),mat(0xb8b0a0)); deg.position.set(0,.02,.44); casa.add(deg);
+      const cerca=mat(0xffffff); for(let k=-4;k<=4;k++){ if(Math.abs(k)<=1) continue; const r=new THREE.Mesh(new THREE.BoxGeometry(.03,.14,.03),cerca); r.position.set(k*.11,.07,.74); casa.add(r); }
+      for(const s of [-1,1]){ const t=new THREE.Mesh(new THREE.BoxGeometry(.33,.025,.02),cerca); t.position.set(s*.33,.11,.74); casa.add(t); }
+      // o casal: os dois de pele clara e cabelo preto
+      const F=window.figurino;
+      if(F && F.pessoa){
+        const ele=F.pessoa('vice',{pele:0xf0d2bc, cabelo:0x111111, est:'curto', camisa:0xe8e4da, calca:0x2a2a32, sapato:0x1a1512});
+        const ela=F.pessoa('vice',{pele:0xf3d8c6, cabelo:0x111111, est:'longoOndulado', fem:true, camisa:0xb88ac8, calca:0x3a2a48, sapato:0x2a1a22, batom:0x9a3a42});
+        [[ele,-.16],[ela,.16]].forEach(([q,x])=>{ q.scale.setScalar(.4); q.position.set(x,.04,.6); q.rotation.y=x<0?.25:-.25; casa.add(q); });
+      }
+      casa.position.set(cx,y0,cz); casa.rotation.y=0; casa.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } }); scene.add(casa);
+    }
     const matCristo=mat(0xe8e2d6,{emissive:0xfff3d8,emissiveIntensity:.35,roughness:.6});
     { // Cristo Redentor: túnica que se alarga no pé, braços abertos com mangas, cabeça inclinada, sobre o pedestal-capela
       const pico={x:31.5,z:43.5}, yP=yTopo(pico.x,pico.z), c=new THREE.Group();
