@@ -952,6 +952,27 @@ body.mj-aberto{overflow:hidden}
 .capa-saves .sidebtn{margin:0;font-size:.8rem}
 html.menos-mov *,html.menos-mov *::before,html.menos-mov *::after{animation:none!important;transition:none!important}
 @media (max-width:560px){ .sl-card{grid-template-columns:auto 1fr} .sl-acoes{grid-column:1/-1;flex-direction:row;justify-content:flex-end;align-items:center} .cf-rot{flex-basis:100%} }
+
+/* Modo Livre */
+.ct-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.ct-card{border-radius:6px;overflow:hidden;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08)}
+.ct-faixa{display:flex;justify-content:space-between;gap:8px;padding:6px 12px;background:var(--cc);color:#fff7e6;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase}
+.ct-corpo{padding:10px 12px}
+.ct-corpo b{display:block;color:#f6ecd4;font-weight:600;line-height:1.3}
+.ct-corpo p{margin:4px 0 6px;font-size:.84rem;color:#c8bc9e;line-height:1.4}
+.ct-passos{display:block;font-size:.76rem;color:#9a8f78;margin-bottom:6px}
+.ct-passos i{font-style:normal} .ct-passos i.feito{text-decoration:line-through;opacity:.6} .ct-passos i.agora{color:var(--brassL);font-weight:600}
+.ct-pe{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ct-paga{font-family:var(--titulo);font-size:1.2rem;font-weight:700;color:#9fe0b0}
+.ct-prazo{font-size:.76rem;color:#9a8f78} .ct-prazo.urgente{color:#f0a090}
+.ct-onde{font-size:.8rem;color:#d6c9a8;flex:1} .ct-onde b{color:var(--brassL)}
+.ct-pe .it-btn{margin-left:auto}
+.lv-nota{font-size:.82rem;color:#9a8f78;margin:12px 0 0}
+.lv-local{font-size:1.05rem}
+.lv-res{margin:8px 0 12px;padding:10px 12px;border-left:3px solid var(--brass);background:rgba(185,143,47,.1);font-size:.95rem}
+.choice-btn.ct-acao{border-left:4px solid var(--cc);background:#fbf3df}
+.choice-btn.ct-acao::before{color:var(--cc)}
+.livre-card .mc-ico{color:#2c5a5e;border-color:#2c5a5e;background:rgba(44,90,94,.12)}
 </style>
 </head>
 <body>
@@ -1051,7 +1072,8 @@ if(!S.itens || typeof S.itens!=="object"){ S.itens={advogado:1}; }    // migraç
 if(typeof S.metodo !== "number"){ S.metodo=0; }                         // migração v0.7: legalista(+) ↔ violento(-)
 if(!S.modo && (S.flags.prologueDone || S.flags.prologueDone2)){ S.modo="hard"; } // migração v0.3: save em andamento mantém o comportamento antigo (sem 2ª chance)
 let mode;
-if(!S.modo){ mode = "modeselect"; }
+if(S.sandbox){ mode = "map"; }
+else if(!S.modo){ mode = "modeselect"; }
 else if(S.season===2){ mode = S.flags["s2c"+S.caso+"Done"] ? "end" : "map"; }
 else if(S.season===3){ mode = S.flags["s3c"+S.caso+"Done"] ? "end" : "map"; }
 else if(S.season===4){ mode = S.flags["s4c"+S.caso+"Done"] ? "end" : "map"; }
@@ -1068,7 +1090,7 @@ else { mode = !S.flags.prologueDone ? "prologue" : (S.flags.heistDone ? "end" : 
    sessão mobile não sobrevive se o jogador tiver que lembrar sozinho. */
 const RECAP_GAP_MS = 20*60*1000;
 let recapReturnMode = null;
-if(S.modo && !S.ended && mode!=="modeselect" && mode!=="prologue" && (Date.now()-S.lastSeen)>RECAP_GAP_MS){
+if(S.modo && !S.sandbox && !S.ended && mode!=="modeselect" && mode!=="prologue" && (Date.now()-S.lastSeen)>RECAP_GAP_MS){
   recapReturnMode = mode;
   mode = "recap";
 }
@@ -1195,6 +1217,12 @@ function renderModeSelect(){
     <div class="capa-grade">
      ${card('warn-btn',"chooseMode('hard')",'⚠','Modo Difícil','Se o Calor chegar a 100, a condicional é revogada e o caso termina ali. Sem segunda chance.')}
      ${card('',"chooseMode('campanha')",'◆','Modo Campanha','Se o Calor chegar a 100, você volta ao início do caso atual — perde o progresso do caso, mas a campanha continua.')}
+    </div>
+   </section>
+   <section class="capa-bloco">
+    <h2>Mundo aberto</h2>
+    <div class="capa-grade">
+     ${card('livre-card',"escolherCidadeLivre()",'✦','Modo Livre','Sem história: escolha Rio ou São Paulo e viva de contratos — perícias, encomendas, operações, entregas, investigações e serviços sujos. O tempo corre sem fim.')}
     </div>
    </section>
    <section class="capa-bloco">
@@ -1400,6 +1428,7 @@ function hasNewSceneOnce(locId){
    e cena presa só no calendário (que ninguém consegue ler hoje — nesse caso
    passar o tempo é exatamente a saída certa, não pode ser bloqueada). */
 function hasNewSceneNow(locId){
+  if(S.sandbox) return livreTemAlvo(locId);
   try{
     return poolFor(locId).some(s => s.once && !s.isCheck && !S.visited[s.id]
       && !isStale(s) && meetsReq(s.requires));
@@ -1408,6 +1437,7 @@ function hasNewSceneNow(locId){
 /* Nomes dos lugares que têm conversa inédita esperando, para dizer ao jogador
    aonde ir em vez de deixá-lo queimar período no lugar errado. */
 function locaisComNovidade(exceto){
+  if(S.sandbox) return [];
   try{
     const ACTIVE=getActiveLocs(); const out=[];
     for(const id in ACTIVE){
@@ -1421,6 +1451,7 @@ function locaisComNovidade(exceto){
   }catch(e){ return []; }
 }
 function anyLiveSceneAnywhere(){
+  if(S.sandbox) return true;
   try{
     const ACTIVE=getActiveLocs();
     for(const id in ACTIVE){
@@ -2887,6 +2918,7 @@ function mapSubtitle(){
   return "seis dias até o leilão · MMXXVI";
 }
 function caseTitle(){
+  if(S.sandbox) return `Modo Livre · ${S.sandbox.cidade==='sp'?'São Paulo':'Rio de Janeiro'} · Dia ${S.day}`;
   if(S.season===2){
     const nomes = {1:"O Cálice Imperial",2:"A Cripta do Outeiro",3:"O Contrato Lótia",4:"A Linha do Bonde",5:"O Pentimento da Baía"};
     return `Capítulo 2 · Caso ${S.caso} — «${nomes[S.caso]||"?"}»`;
@@ -2943,7 +2975,7 @@ function shell(inner){
   return `
   <header class="masthead${capa?' capa':''}">
    ${capa?'':`<div class="mh-marca"><div class="mh-line"><span class="mh-d">◆</span><h1>Condicional</h1><span class="mh-d">◆</span></div>
-   <div class="mh-sub">${caseTitle()}${S.modo?` · Modo ${S.modo==='campanha'?'Campanha':'Difícil'}`:''}</div></div>`}
+   <div class="mh-sub">${caseTitle()}${S.modo&&!S.sandbox?` · Modo ${S.modo==='campanha'?'Campanha':'Difícil'}`:''}</div></div>`}
    <nav class="mh-acoes" aria-label="Jogo">
     ${capa||!S.flags.prologueDone?'':`<button class="sidebtn mh-btn mh-mochila" type="button" onclick="abrirMochila()" aria-label="Mochila${provasNovas()?' — '+provasNovas()+' prova(s) nova(s)':''}">${ICONE_MOCHILA}<span>Mochila</span>${provasNovas()?`<b class="mh-qtd">${provasNovas()}</b>`:''}</button>`}
     <button class="sidebtn mh-btn" type="button" onclick="abrirMenu()" aria-haspopup="dialog">${ICONE_MENU}<span>Menu</span></button>
@@ -2971,11 +3003,12 @@ const HUD_ESTADOS={
 };
 let hudAnterior=null;
 function renderStatus(){
-  const d=Math.min(S.day,6), tz=temTornozeleira();
+  const d=S.sandbox?S.day:Math.min(S.day,6), tz=temTornozeleira();
   return `<div class="statusbar hud">
    <div class="hud-tempo">${clockSVG()}
-    <div class="hud-tempo-txt"><div class="clock-day">${DAYS[d-1]} · ${PERIODS[S.period]}</div>
-     <div class="hud-dias" aria-label="Dia ${d} de 6">${[1,2,3,4,5,6].map(n=>`<i class="${n<d?'foi':n===d?'hoje':''}"></i>`).join('')}<span>Dia ${d} de 6</span></div>
+    <div class="hud-tempo-txt"><div class="clock-day">${S.sandbox?[...DAYS,'Domingo'][(d-1)%7]:DAYS[d-1]} · ${PERIODS[S.period]}</div>
+     ${S.sandbox?`<div class="hud-dias"><span>Dia ${d} · Modo Livre · ${S.sandbox.feitos||0} contrato${S.sandbox.feitos===1?'':'s'} cumprido${S.sandbox.feitos===1?'':'s'}</span></div>`
+       :`<div class="hud-dias" aria-label="Dia ${d} de 6">${[1,2,3,4,5,6].map(n=>`<i class="${n<d?'foi':n===d?'hoje':''}"></i>`).join('')}<span>Dia ${d} de 6</span></div>`}
      <div class="hud-pilulas"><span class="hud-pil dinheiro">R$ ${S.money.toLocaleString('pt-BR')}</span><span class="hud-pil ${tz?'tz-on':'tz-off'}"><i></i>${tz?'Tornozeleira ativa':'Sem tornozeleira'}</span></div>
     </div></div>
    ${renderMeters()}
@@ -8365,6 +8398,7 @@ const LOCS_S12 = {
 };
 
 function getActiveLocs(){
+ if(S.sandbox) return locaisLivres();
  if(S.season===2 || S.season===3) return LOCS_S2;
  if(S.season===4) return LOCS_S4;
  if(S.season===5 || S.season===6) return LOCS_S6;
@@ -8529,10 +8563,11 @@ function desenharMochila(){
   const todas=S.evidence||[], doCaso=todas.filter(evidenceScopeForSeason(S.season));
   if(mochilaSel && S.provasMeta && S.provasMeta[mochilaSel]) S.provasMeta[mochilaSel].nova=false;
   const nItens=Object.values(S.itens||{}).reduce((a,b)=>a+b,0);
-  const abas=[['caso','Provas do caso',doCaso.length],['arquivo','Arquivo',todas.length],['itens','Itens',nItens],['loja','Loja',''],['servicos','Serviços sujos',''],['pertences','Pertences','']];
+  const abas=[...(S.sandbox?[['contratos','Contratos',(S.sandbox.ativos||[]).length]]:[]),['caso','Provas do caso',doCaso.length],['arquivo','Arquivo',todas.length],['itens','Itens',nItens],['loja','Loja',''],['servicos','Serviços sujos',''],['pertences','Pertences','']];
   let corpo='';
   if(mochilaAba==='pertences') corpo=pertencesHtml();
   else if(mochilaAba==='itens') corpo=itensHtml();
+  else if(mochilaAba==='contratos' && S.sandbox) corpo=contratosHtml();
   else if(mochilaAba==='loja') corpo=lojaHtml();
   else if(mochilaAba==='servicos') corpo=servicosHtml();
   else {
@@ -8773,12 +8808,12 @@ const SERVICOS={
 };
 const SERVICOS_POR_CASO=2;
 function servicosDoCaso(){
-  const ids=Object.keys(SERVICOS), n=ids.length, base=((S.season||1)*7+(S.caso||1)*3)%n;
+  const ids=Object.keys(SERVICOS), n=ids.length, base= S.sandbox ? (S.day*5)%n : ((S.season||1)*7+(S.caso||1)*3)%n;
   return [ids[base], ids[(base+5)%n], ids[(base+9)%n]];
 }
-function chaveCaso(){ return (S.season||1)+'-'+(S.caso||1); }
+function chaveCaso(){ return S.sandbox ? 'livre-'+S.day : (S.season||1)+'-'+(S.caso||1); }
 function feitosNoCaso(){ S.servicosFeitos=S.servicosFeitos||{}; return S.servicosFeitos[chaveCaso()]||[]; }
-function pagaServico(sv){ return Math.round(sv.paga*(1+0.15*((S.season||1)-1))/100)*100; }
+function pagaServico(sv){ const nivel= S.sandbox ? 1+Math.min(10,Math.floor((S.sandbox.feitos||0)/3)) : (S.season||1); return Math.round(sv.paga*(1+0.15*(nivel-1))/100)*100; }
 function chanceServico(sv){ return Math.max(0.08, Math.min(0.94, 0.5 + (pericia(sv.per)-sv.dif)*0.09)); }
 function efeitosTxt(e){ const nomes={calor:'Calor',confianca:'Confiança',submundo:'Submundo',integridade:'Integridade',metodo:'Método'};
   return Object.entries(e).map(([k,v])=>`${nomes[k]} ${v>0?'+':'−'}${Math.abs(v)}`).join(' · '); }
@@ -13561,6 +13596,7 @@ window.travelTo = function(id){
 };
 
 function enterLocation(locId){
+  if(S.sandbox){ entrarLivre(locId); return; }
   let pool;
   if(S.season===2){
     const s2pool = {1:SCENES_S2C1, 2:SCENES_S2C2, 3:SCENES_S2C3, 4:SCENES_S2C4, 5:SCENES_S2C5}[S.caso];
@@ -13629,6 +13665,7 @@ function enterLocation(locId){
 function botaoLoja(loc){ const l=lojaLoc(); return l&&l.id===loc ? `<button type="button" class="sidebtn loja-btn" onclick="abrirMochila(null,'loja')">${ICONE_MOCHILA} Ver a mala do Nelson — ferramentas e favores</button><button type="button" class="sidebtn loja-btn sujo" onclick="abrirMochila(null,'servicos')">${ICONE_MOCHILA} Ouvir as propostas do Nelson — serviços sujos</button>` : ''; }
 function renderScenePanel(){
   const cs = currentScene;
+  if(cs && cs.livre) return renderLocalLivre(cs);
   if(cs.filler){
     const L = getActiveLocs()[cs.loc];
     const semNada = !anyLiveSceneAnywhere();
@@ -13758,6 +13795,7 @@ function avisoConduta(){
 }
 
 function advancePeriod(){
+  if(S.sandbox){ avancarLivre(); return; }
   S.period++;
   let novoDia = false;
   if(S.period>2){ S.period=0; S.day++; novoDia=true; }
@@ -15685,7 +15723,7 @@ window.abrirMenu = function(){
    ${grupo('Vincent',[emJogo&&it('openDossie()','✎','Dossiê pessoal','Perícias, relações e histórico'),it('openConquistas()','★','Conquistas','E os exclusivos que cada uma libera'),emJogo&&it('openEvidenceJournal()','⌗','Diário de evidências','Tudo o que já foi recolhido')])}
    ${grupo('Desafios',[it('openDaily()','☀','Perícia diária','Uma peça por dia'),it('openWeekly()','✦','Desafio semanal','A peça dura da semana')])}
    ${grupo('Aprender',[it('openManual()','❡','Manual do perito',''),it("openTutorial('pericia')",'?','Como jogar: perícia',''),it("openTutorial('forja')",'?','Como jogar: bancada',''),it("openTutorial('operacoes')",'?','Como jogar: operações','')])}
-   ${grupo('Jogo',[it('abrirSaves()','⎘','Jogos salvos','Três espaços: carregar, começar outro, apagar'),it('abrirConfig()','⚙','Configurações','Som, tamanho do texto, animações e gráficos'),visual3D&&it('alternarVisual()','◐','Visual: '+(em3D?'3D':'clássico'),'Trocar entre cenas 3D e pintadas'),it('alternarSom()','♪','Som: '+(som.ativo?'ligado':'desligado'),'Efeitos e trilha'),it('som.ciclarMusica()','♫','Música: '+som.rotuloMusica(),'Toque para mudar o volume'),it('telaCheia()','⤢','Tela cheia',''),
+   ${grupo('Jogo',[it('escolherCidadeLivre()','✦','Modo Livre','Mundo aberto com contratos, sem história'),it('abrirSaves()','⎘','Jogos salvos','Três espaços: carregar, começar outro, apagar'),it('abrirConfig()','⚙','Configurações','Som, tamanho do texto, animações e gráficos'),visual3D&&it('alternarVisual()','◐','Visual: '+(em3D?'3D':'clássico'),'Trocar entre cenas 3D e pintadas'),it('alternarSom()','♪','Som: '+(som.ativo?'ligado':'desligado'),'Efeitos e trilha'),it('som.ciclarMusica()','♫','Música: '+som.rotuloMusica(),'Toque para mudar o volume'),it('telaCheia()','⤢','Tela cheia',''),
      S.modo==="campanha"&&S.checkpoint&&it('restartCaso()','↺','Reiniciar caso',''),S.modo==="campanha"&&S.seasonCheckpoint&&it('restartSeason()','↺','Reiniciar capítulo',''),
      emJogo&&it('resetGame()','⟲','Reiniciar o jogo','Apaga todo o progresso'),it('openDevJump()','⇥','Modo teste','Ir direto para um caso')])}
   </aside>`;
@@ -15700,6 +15738,177 @@ window.fecharMenu = function(ja){
   if(ja){ el.remove(); return; } el.classList.remove('on'); setTimeout(()=>el.remove(),220);
 };
 
+
+
+/* ===================== MODO LIVRE (SANDBOX) =====================
+   Sem história: a cidade inteira aberta, um quadro de contratos que se renova
+   todo dia e as mesas do jogo sorteando casos. Dinheiro, Calor, itens, roupas,
+   veículos e serviços sujos funcionam igual; o tempo corre sem fim. */
+const LIVRE_FONTES={rio:()=>[LOCS,LOCS_S2,LOCS_S4,LOCS_S6], sp:()=>[LOCS_S7,LOCS_S8,LOCS_S9,LOCS_S10,LOCS_S11,LOCS_S12]};
+let _locaisLivres=null, _locaisLivresCid=null;
+function locaisLivres(){
+  const cid=S.sandbox.cidade; if(_locaisLivres && _locaisLivresCid===cid) return _locaisLivres;
+  const out={}; LIVRE_FONTES[cid]().forEach(L=>{ for(const id in L) if(!out[id]){ const c=Object.assign({},L[id]); delete c.caso; delete c.reqFlag; out[id]=c; } });
+  _locaisLivres=out; _locaisLivresCid=cid; return out;
+}
+const TIPOS_CONTRATO={
+  pericia:  {nome:'Perícia', ico:'⌕', cor:'#2C5A5E', quem:'Polícia Federal'},
+  forja:    {nome:'Encomenda', ico:'✎', cor:'#9C3B22', quem:'Cliente do Nelson', sujo:true},
+  operacao: {nome:'Operação', ico:'◎', cor:'#39608C', quem:'Polícia Federal'},
+  entrega:  {nome:'Entrega', ico:'⇄', cor:'#8a6f3a', quem:'Particular'},
+  contrabando:{nome:'Contrabando', ico:'⇄', cor:'#6E4A7E', quem:'Receptador', sujo:true},
+  investigacao:{nome:'Investigação', ico:'❖', cor:'#3d6b3d', quem:'Seguradora'}
+};
+const R_LIVRE=(a)=>a[Math.floor(Math.random()*a.length)];
+function locaisSorteaveis(){ return Object.keys(locaisLivres()).filter(id=>id!=='apto'); }
+function nomeLocal(id){ const l=locaisLivres()[id]; return l?l.name:id; }
+function nivelLivre(){ return 1+Math.min(10,Math.floor((S.sandbox.feitos||0)/3)); }
+function novoContrato(){
+  /* com a Confiança no chão, a PF para de chamar: sobra o trabalho de rua e o sujo */
+  const pfFechada=S.meters.confianca<25;
+  const sb=S.sandbox, tipo=R_LIVRE(pfFechada ? ['forja','forja','entrega','contrabando','contrabando','investigacao'] : ['pericia','pericia','forja','operacao','entrega','contrabando','investigacao','investigacao']);
+  const L=locaisSorteaveis(), loc=R_LIVRE(L), n=nivelLivre(), k=1+0.12*(n-1);
+  const id='c'+(++sb.seq);
+  const base={id, tipo, prazo:S.day+R_LIVRE([2,3,3,4]), etapa:0};
+  if(tipo==='pericia'){ const c=R_LIVRE(CASOS); return Object.assign(base,{caso:c.chave, loc, titulo:'Laudo: '+c.titulo, desc:`A PF quer um laudo sobre ${c.titulo}${c.autor?', atribuída a '+c.autor:''}. A peça está em ${nomeLocal(loc)}.`, paga:Math.round((1800+600*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
+  if(tipo==='forja'){ const c=R_LIVRE(FORJAS); return Object.assign(base,{caso:c.chave, loc, titulo:'Encomenda: '+c.titulo, desc:`Um cliente do Nelson quer ${c.titulo.toLowerCase()}. A bancada fica montada em ${nomeLocal(loc)}. Paga bem; passa por perícia na entrega.`, paga:Math.round((4000+1500*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
+  if(tipo==='operacao'){ const c=R_LIVRE(OPERACOES); return Object.assign(base,{caso:c.chave, loc, titulo:'Operação: '+c.titulo, desc:`A PF precisa de um plano de campo. Briefing em ${nomeLocal(loc)}.`, paga:Math.round((2500+800*(c.dificuldade||2))*k/100)*100, dif:c.dificuldade||2}); }
+  if(tipo==='entrega'||tipo==='contrabando'){ let b=R_LIVRE(L); while(b===loc && L.length>1) b=R_LIVRE(L);
+    const sujo=tipo==='contrabando', oque= sujo ? R_LIVRE(['uma caixa lacrada que ninguém quer abrir','um tubo de desenho com um “estudo” dentro','uma pasta com documentos de procedência','uma maleta pesada demais para papéis']) : R_LIVRE(['uma moldura antiga para restauro','os documentos de um leilão','um catálogo raro','uma caixa de pigmentos importados']);
+    return Object.assign(base,{loc, locs:[loc,b], titulo:(sujo?'Contrabando: ':'Entrega: ')+oque, desc:`Pegar ${oque} em ${nomeLocal(loc)} e levar até ${nomeLocal(b)}.${sujo?' Sem perguntas — e sem nota.':''}`, paga:Math.round((sujo?5000:1600)*k/100)*100}); }
+  // investigação: três lugares e o relatório na PF
+  const alvos=[]; while(alvos.length<3){ const x=R_LIVRE(L); if(!alvos.includes(x)) alvos.push(x); }
+  const assunto=R_LIVRE(['o sumiço de uma gravura do acervo de um banco','uma tela segurada por dez vezes o valor','um roubo de joias que a seguradora acha armado','o comprador anônimo de três peças do mesmo pintor']);
+  return Object.assign(base,{loc:alvos[0], locs:alvos.concat(['pf']), titulo:'Investigação: '+assunto, desc:`A seguradora paga por informação sobre ${assunto}. Ouça gente em ${alvos.map(nomeLocal).join(', ')} e entregue o relatório na ${nomeLocal('pf')}.`, paga:Math.round(4500*k/100)*100, pistas:0});
+}
+function reporQuadro(){ const sb=S.sandbox; sb.quadro=(sb.quadro||[]).filter(c=>c.prazo>=S.day); let t=0;
+  while(sb.quadro.length<5 && t++<60){ const c=novoContrato(); if(!sb.quadro.concat(sb.ativos).some(x=>x.titulo===c.titulo)) sb.quadro.push(c); else sb.seq--; } }
+window.iniciarLivre = function(cidade){
+  S=newState(); S.modo='campanha'; S.sandbox={cidade, seq:0, quadro:[], ativos:[], feitos:0, falhas:0};
+  S.season= cidade==='sp' ? 7 : 1; S.caso=1; S.flags.prologueDone=true; S.money=5000; S.loc='apto'; S.trail=['apto'];
+  _locaisLivres=null; reporQuadro(); fecharModalJogo('livre-cidade'); mode='map'; currentScene=null; save(); render();
+  setTimeout(()=>abrirMochila(null,'contratos'),400);
+};
+window.escolherCidadeLivre = function(){
+  let el=document.getElementById('livre-cidade'); if(el) el.remove();
+  el=document.createElement('div'); el.id='livre-cidade'; el.className='modal-jogo'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true');
+  el.innerHTML=`<div class="mj-fundo" onclick="fecharModalJogo('livre-cidade')"></div><div class="mo-caixa mj-pequena">
+    <header class="mo-topo"><span class="mo-titulo"><b>Modo Livre</b></span><span class="mo-sub">Sem história: contratos abertos, a cidade inteira, tempo sem fim.</span>
+     <button type="button" class="mj-x" onclick="fecharModalJogo('livre-cidade')" aria-label="Fechar">✕</button></header>
+    <div class="mo-lista"><p class="lv-nota">${S.modo&&!S.sandbox?'<b>Atenção:</b> o Modo Livre começa neste espaço de save e substitui a campanha que está nele. Para manter a campanha, escolha outro espaço em “Jogos salvos”.':'Escolha a cidade. Dá para jogar a outra depois, em outro espaço de save.'}</p>
+     <div class="capa-grade">
+      <button type="button" class="choice-btn modo-card" onclick="iniciarLivre('rio')"><span class="mc-ico">☀</span><strong>Rio de Janeiro</strong><span class="choice-tag">Do Centro a Niterói e Paquetá. Barcas, leilões, o Bar Alcatrão do Nelson.</span></button>
+      <button type="button" class="choice-btn modo-card" onclick="iniciarLivre('sp')"><span class="mc-ico">☂</span><strong>São Paulo</strong><span class="choice-tag">Faria Lima, Jardins, Paulista e o centro velho. Mais dinheiro, mais câmera.</span></button>
+     </div></div></div>`;
+  document.body.appendChild(el); document.body.classList.add('mj-aberto'); requestAnimationFrame(()=>el.classList.add('on'));
+};
+function alvoAtual(c){ return c.locs ? c.locs[c.etapa] : c.loc; }
+function livreTemAlvo(loc){ return !!(S.sandbox && (S.sandbox.ativos||[]).some(c=>alvoAtual(c)===loc)); }
+window.aceitarContrato = function(id){
+  const sb=S.sandbox, i=sb.quadro.findIndex(c=>c.id===id); if(i<0) return;
+  if(sb.ativos.length>=3){ mochilaAviso='Três contratos de cada vez. Termine ou desista de um antes.'; desenharMochila(); return; }
+  const c=sb.quadro.splice(i,1)[0]; sb.ativos.push(c); mochilaAviso=`Aceito: ${c.titulo}. Vá até ${nomeLocal(alvoAtual(c))}.`; som.efeito('item');
+  reporQuadro(); save(); desenharMochila(); if(mode==='map') render();
+};
+window.desistirContrato = function(id){
+  const sb=S.sandbox, i=sb.ativos.findIndex(c=>c.id===id); if(i<0) return;
+  sb.ativos.splice(i,1); S.meters.confianca=clamp(S.meters.confianca-3); mochilaAviso='Contrato largado. Quem contratou não esquece (Confiança −3).';
+  save(); atualizarHud(); desenharMochila(); if(mode==='map') render();
+};
+function cartaoContrato(c,ativo){
+  const T=TIPOS_CONTRATO[c.tipo], restam=c.prazo-S.day, alvo=alvoAtual(c);
+  const passos = c.locs ? `<span class="ct-passos">${c.locs.map((l,i)=>`<i class="${i<c.etapa?'feito':i===c.etapa&&ativo?'agora':''}">${nomeLocal(l)}</i>`).join(' → ')}</span>` : '';
+  return `<div class="ct-card" style="--cc:${T.cor}"><div class="ct-faixa"><span>${T.ico} ${T.nome}${T.sujo?' · sujo':''}</span><span>${T.quem}</span></div>
+    <div class="ct-corpo"><b>${c.titulo}</b><p>${c.desc}</p>${passos}
+     <div class="ct-pe"><span class="ct-paga">R$ ${c.paga.toLocaleString('pt-BR')}</span><span class="ct-prazo${restam<=0?' urgente':''}">${restam<=0?'vence hoje':restam===1?'vence amanhã':'vence em '+restam+' dias'}</span>
+      ${ativo?`<span class="ct-onde">Próximo passo: <b>${nomeLocal(alvo)}</b></span><button type="button" class="sl-apagar" onclick="desistirContrato('${c.id}')">Desistir</button>`
+        :`<button type="button" class="it-btn" onclick="aceitarContrato('${c.id}')">Aceitar</button>`}</div></div></div>`;
+}
+function contratosHtml(){
+  const sb=S.sandbox; reporQuadro();
+  return `${mochilaAviso?`<p class="it-aviso" role="status">${mochilaAviso}</p>`:''}
+   <h4 class="mo-cap">Em andamento <span>${sb.ativos.length} de 3</span></h4>
+   ${sb.ativos.length?`<div class="ct-lista">${sb.ativos.map(c=>cartaoContrato(c,true)).join('')}</div>`:'<p class="mo-vazio">Nenhum. Aceite um contrato do quadro abaixo e siga o halo dourado no mapa.</p>'}
+   <h4 class="mo-cap">Quadro de contratos <span>renova todo dia</span></h4>
+   <div class="ct-lista">${sb.quadro.map(c=>cartaoContrato(c,false)).join('')}</div>
+   <p class="lv-nota">Contratos cumpridos: ${sb.feitos||0} · perdidos: ${sb.falhas||0}. Quanto mais você cumpre, mais pagam (nível ${nivelLivre()}).${S.meters.confianca<25?' <b>Com a Confiança abaixo de 25, a PF parou de te chamar.</b>':''}</p>`;
+}
+/* ----- no local ----- */
+let resultadoLivre='';
+function entrarLivre(loc){
+  const L=locaisLivres()[loc];
+  if(L && L.zone==='fora' && temTornozeleira() && S.sandbox.ultimoFora!==S.day+'-'+S.period){ S.sandbox.ultimoFora=S.day+'-'+S.period; S.meters.calor=clamp(S.meters.calor+6); resultadoLivre='Fora do raio da tornozeleira: o sinal foi enviado (Calor +6).'; }
+  currentScene={loc, livre:true}; mode='scene'; render();
+}
+function renderLocalLivre(cs){
+  const loc=cs.loc, L=locaisLivres()[loc]||{}, sb=S.sandbox, aqui=sb.ativos.filter(c=>alvoAtual(c)===loc);
+  const acao=c=>{ const T=TIPOS_CONTRATO[c.tipo]; let rot;
+    if(c.tipo==='pericia') rot='Montar a mesa de perícia'; else if(c.tipo==='forja') rot='Abrir a bancada'; else if(c.tipo==='operacao') rot='Montar o plano da operação';
+    else if(c.tipo==='entrega'||c.tipo==='contrabando') rot= c.etapa===0?'Pegar a carga':'Entregar a carga';
+    else rot= c.etapa<3 ? 'Ouvir quem está por aqui' : 'Entregar o relatório';
+    return `<button class="choice-btn ct-acao" style="--cc:${T.cor}" onclick="executarContrato('${c.id}')"><strong>${rot}</strong> <span class="choice-tag">${c.titulo} · R$ ${c.paga.toLocaleString('pt-BR')}</span></button>`; };
+  const res = resultadoLivre ? `<div class="lv-res">${resultadoLivre}</div>` : ''; resultadoLivre='';
+  return sceneCard(loc, `<p class="lv-local"><b>${L.name||loc}</b>${L.desc&&L.desc.indexOf('⚠')<0?' — '+L.desc:''}</p>${res}
+   ${aqui.length?`<p>Você tem trabalho aqui.</p>`:`<p><em>Nenhum contrato seu passa por aqui agora.</em></p>`}
+   <div class="choices">${aqui.map(acao).join('')}
+    <button class="choice-btn" onclick="abrirMochila(null,'contratos')">Ver o quadro de contratos</button>
+    ${loc==='apto'?`<button class="choice-btn" onclick="descansarLivre()">Dormir até amanhã (Calor −10)</button>`:''}
+    <button class="choice-btn" onclick="startMap()">Voltar ao mapa</button>${botaoLoja(loc)}</div>`);
+}
+function pagarContrato(c,fracao,msg,efe){
+  const sb=S.sandbox, v=Math.round(c.paga*fracao/100)*100; sb.ativos=sb.ativos.filter(x=>x.id!==c.id);
+  if(v>0){ S.money+=v; sb.feitos=(sb.feitos||0)+1; som.efeito('moeda'); } else { sb.falhas=(sb.falhas||0)+1; som.efeito('erro'); }
+  if(efe) aplicarEfeitosServico(efe);
+  resultadoLivre=`${msg}${v>0?` <b>+R$ ${v.toLocaleString('pt-BR')}</b>`:''}${efe?` <i>(${efeitosTxt(efe)})</i>`:''}`;
+}
+window.executarContrato = function(id){
+  const sb=S.sandbox, c=sb.ativos.find(x=>x.id===id); if(!c) return;
+  const voltar=()=>{ save(); avancarLivre(true); };
+  if(c.tipo==='pericia'){ const caso=CASOS.find(x=>x.chave===c.caso);
+    startLaudo(caso,(ok,grau)=>{ const f=grau==='perfeito'?1:grau==='parcial'?.5:0;
+      pagarContrato(c,f, grau==='perfeito'?'Laudo homologado.':grau==='parcial'?'Laudo contestado: pagam metade.':'Laudo rejeitado. Nada a receber.', grau==='falha'?{confianca:-5}:{confianca:grau==='perfeito'?4:1}); voltar(); }); return; }
+  if(c.tipo==='forja'){ const caso=FORJAS.find(x=>x.chave===c.caso);
+    startForja(caso,(grau)=>{ const f=grau==='limpo'?1:grau==='marcado'?.4:0;
+      pagarContrato(c,f, grau==='limpo'?'A peça passou limpa.':grau==='marcado'?'A peça passou marcada: o cliente paga menos.':'A peça queimou na perícia.', grau==='queimado'?{calor:18}:{calor:grau==='limpo'?5:10, integridade:-6}); voltar(); }); return; }
+  if(c.tipo==='operacao'){ const caso=OPERACOES.find(x=>x.chave===c.caso);
+    startOperacao(caso,(grau)=>{ const f=grau==='executada'?1:grau==='improvisada'?.5:0;
+      pagarContrato(c,f, grau==='executada'?'Operação limpa.':grau==='improvisada'?'Saiu no improviso: pagam metade.':'O alvo escapou.', grau==='perdida'?{confianca:-6}:{confianca:grau==='executada'?5:1}); voltar(); }); return; }
+  if(c.tipo==='entrega'||c.tipo==='contrabando'){
+    if(c.etapa===0){ const sujo=c.tipo==='contrabando';
+      if(sujo && !skillCheck(pericia('infiltracao'),5)){ pagarContrato(c,0,'Uma viatura para no meio da coleta. Você larga a carga e sai andando.',{calor:15}); voltar(); return; }
+      c.etapa=1; resultadoLivre=`Carga na mão. Agora para <b>${nomeLocal(c.locs[1])}</b>.${sujo?' <i>(Calor +4)</i>':''}`; if(sujo) S.meters.calor=clamp(S.meters.calor+4);
+      save(); render(); return; }
+    pagarContrato(c,1,'Entregue, conferido, pago.', c.tipo==='contrabando'?{integridade:-8,submundo:4}:{}); voltar(); return; }
+  // investigação
+  if(c.etapa<3){ const k=R_LIVRE(['percepcao','rede','labia']), ok=skillCheck(pericia(k),5);
+    if(ok) c.pistas=(c.pistas||0)+1; c.etapa++;
+    resultadoLivre= (ok?`Você arranca uma boa informação (${NOME_PERICIA[k]}).`:`Ninguém fala nada que preste (${NOME_PERICIA[k]}).`)+` Próximo: <b>${nomeLocal(c.locs[c.etapa])}</b>.`;
+    save(); avancarLivre(true); return; }
+  const f=[0,.4,.75,1][c.pistas||0]; pagarContrato(c,f, `Relatório entregue com ${c.pistas||0} de 3 pistas sólidas.`, f>0?{confianca:2}:null); voltar();
+};
+window.descansarLivre = function(){ S.meters.calor=clamp(S.meters.calor-10); S.period=2; resultadoLivre='Uma noite inteira de sono. A tornozeleira pisca verde.'; avancarLivre(true); };
+/* ----- o tempo ----- */
+function avancarLivre(ficaNoLocal){
+  const sb=S.sandbox; S.period++;
+  let novoDia=false; if(S.period>2){ S.period=0; S.day++; novoDia=true; }
+  const msgs=[];
+  if(novoDia){
+    S.meters.calor=clamp(S.meters.calor-4);
+    const custo=200+40*nivelLivre(); S.money=Math.max(0,S.money-custo); msgs.push(`Novo dia: aluguel e condução (−R$ ${custo.toLocaleString('pt-BR')}).`);
+    const vencidos=sb.ativos.filter(c=>c.prazo<S.day); if(vencidos.length){ sb.ativos=sb.ativos.filter(c=>c.prazo>=S.day); sb.falhas=(sb.falhas||0)+vencidos.length; S.meters.confianca=clamp(S.meters.confianca-4*vencidos.length); msgs.push(`${vencidos.length} contrato${vencidos.length>1?'s venceram':' venceu'} sem ser cumprido (Confiança −${4*vencidos.length}).`); }
+    reporQuadro();
+  }
+  if(S.meters.calor>=100){ // no Modo Livre a revogação não encerra: custa caro e recomeça
+    const multa=Math.round(S.money*.3); S.money-=multa; S.meters.calor=40; S.meters.confianca=clamp(S.meters.confianca-20);
+    sb.falhas=(sb.falhas||0)+sb.ativos.length; sb.ativos=[]; S.day++; S.period=0; S.loc='apto';
+    msgs.push(`<b>A tornozeleira estourou.</b> Uma noite na carceragem, os contratos perdidos e um advogado caro (−R$ ${multa.toLocaleString('pt-BR')}, Confiança −20).`);
+    som.efeito('alarme'); currentScene={loc:'apto',livre:true}; mode='scene';
+  }
+  if(msgs.length) resultadoLivre=(resultadoLivre?resultadoLivre+'<br>':'')+msgs.join('<br>');
+  save();
+  if(mode==='scene' && currentScene && currentScene.livre && (ficaNoLocal||S.meters.calor===40)){ render(); return; }
+  mode='map'; currentScene=null; render();
+}
 
 /* ---------- jogos salvos ---------- */
 function resumoSlot(n){
