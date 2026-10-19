@@ -1007,6 +1007,8 @@ html.menos-mov *,html.menos-mov *::before,html.menos-mov *::after{animation:none
 .mt-fatos span i{font-style:normal;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#8a7a5a;margin-right:8px}
 .mt-frases{display:flex;flex-direction:column;gap:7px}
 .mt-frases .choice-btn.mt-ok{background:#e6f4ea;border-color:#5FA08C} .mt-frases .choice-btn.mt-erro{background:#f8e0da;border-color:#be4a33}
+.choice-btn.corrupta{border-color:#9c3b22;background:linear-gradient(90deg,rgba(190,74,51,.12),#F5EAD0 40%)}
+.choice-btn.corrupta::before{content:'$';color:#9c3b22;font-weight:700}
 </style>
 </head>
 <body>
@@ -13698,6 +13700,41 @@ function enterLocation(locId){
   mode="scene"; render();
 }
 
+
+/* ---------- propinas dentro da história ----------
+   Em algumas cenas, alguém oferece dinheiro. A escolha corrupta herda os efeitos
+   da escolha de referência (provas, flags, avanço), então nunca trava a história:
+   só soma o dinheiro, o Calor e a sujeira na Integridade. */
+const PROPINAS={
+  leilao_visita:{base:0, label:'Aceitar o “adiantamento de consultoria” que Bulhões desliza num envelope (R$ 6.000).', money:6000, calor:6, integridade:-12,
+    txt:'O envelope é grosso e cheira a perfume caro. Bulhões entrega o catálogo como quem entrega um recibo. Daqui pra frente, ele acha que você tem dono.'},
+  leilao2_bulhoes:{base:0, label:'Cobrar de Bulhões por “esquecer” duas linhas do depoimento (R$ 8.000).', money:8000, calor:8, integridade:-15,
+    txt:'Ele paga sem discutir — colaborador da Justiça aprende rápido o preço de cada linha. Os registros vêm, menos duas páginas.'},
+  municipal_barbara1:{base:0, label:'Aceitar o convite de Bárbara para “consultorias de eventos” bem pagas (R$ 5.000).', money:5000, calor:5, integridade:-10, submundo:4,
+    txt:'Um cartão com um número escrito à mão e um adiantamento dentro da bolsa de festa. Ela sorri como quem acabou de comprar um seguro.'},
+  chopin_blefe:{base:0, label:'Insinuar a Menezes que um acordo por fora resolve tudo (R$ 12.000).', money:12000, calor:10, integridade:-18, metodo:-5,
+    txt:'A caneta para de girar. Menezes escreve um número num guardanapo e empurra pela mesa. O blefe vira negócio — e o negócio vira um segredo seu.'},
+  copacabana_s5_negociacao:{base:0, label:'Pedir a Zurov uma comissão pela matriz, além do tempo (R$ 15.000).', money:15000, calor:12, integridade:-20, submundo:8,
+    txt:'Zurov ri pela primeira vez. “Agora estamos conversando.” O dinheiro chega em notas de cem, amarradas com elástico de escritório.'},
+  s9c2_visita_oficial:{base:1, label:'Aceitar o “honorário” que o Tabelião oferece por um relatório mais brando (R$ 14.000).', money:14000, calor:10, integridade:-18, relacoes:{beatriz:-6},
+    txt:'Um envelope pardo com o carimbo do cartório, esquecido de propósito sobre a sua pasta. Beatriz não vê. Você vê o resto do dia.'},
+  s11c1_encontro_otavio:{base:1, label:'Deixar Otávio “contratar” você como parecerista do acervo (R$ 25.000).', money:25000, calor:14, integridade:-25, relacoes:{beatriz:-10},
+    txt:'Ele não pisca. “Meu jurídico manda o contrato hoje.” O contrato chega antes do almoço. O valor é maior do que o seu ano inteiro de condicional.'},
+  s8c1_confronto_tintas:{base:1, label:'Vender a Igor a rota da PF em troca de uma parte da venda (R$ 18.000).', money:18000, calor:15, integridade:-22, submundo:10, relacoes:{anya:-6},
+    txt:'Igor anota a rota num maço de cigarro e paga em dólar. Anya escuta tudo calada. Não é o tipo de coisa que ela esquece.'}
+};
+function somaEfeitos(a,b){ const o=JSON.parse(JSON.stringify(a||{}));
+  for(const k in b){ if(k==='relacoes'){ o.relacoes=o.relacoes||{}; for(const r in b.relacoes) o.relacoes[r]=(o.relacoes[r]||0)+b.relacoes[r]; }
+    else if(typeof b[k]==='number') o[k]=(o[k]||0)+b[k]; }
+  return o; }
+function injetarPropina(sc){
+  const P=PROPINAS[sc.id]; if(!P || sc._propina) return; const ref=sc.choices[P.base]; if(!ref || ref.customAction) return;
+  const extra={money:P.money, calor:P.calor, integridade:P.integridade}; ['submundo','metodo','confianca','relacoes'].forEach(k=>{ if(P[k]) extra[k]=P[k]; });
+  const res=ref.result;
+  sc.choices.push({label:'[Corrupção] '+P.label, requires:ref.requires, effects:somaEfeitos(ref.effects,extra), corrupta:true,
+    get result(){ const r=typeof res==='function'?res():res; return `<span class="tell">${P.txt}</span><br><br>${r||''}`; }});
+  sc._propina=true; }
+
 function botaoLoja(loc){ const l=lojaLoc(); return l&&l.id===loc ? `<button type="button" class="sidebtn loja-btn" onclick="abrirMochila(null,'loja')">${ICONE_MOCHILA} Ver a mala do Nelson — ferramentas e favores</button><button type="button" class="sidebtn loja-btn sujo" onclick="abrirMochila(null,'servicos')">${ICONE_MOCHILA} Ouvir as propostas do Nelson — serviços sujos</button>` : ''; }
 function renderScenePanel(){
   const cs = currentScene;
@@ -13721,6 +13758,7 @@ function renderScenePanel(){
      ${semNada ? `<button class="choice-btn" onclick="skipToNextCaso()">Nada mais em lugar nenhum — avançar para o próximo caso</button>` : ""}</div>`);
   }
   const sc = cs.scene;
+  if(!S.sandbox) injetarPropina(sc);
   conhecer(sc.char);
   const sceneText = typeof sc.text==="function" ? sc.text() : sc.text;
   let html = plate(sc.char)+`<div id="scene-text"><p>${sceneText}</p></div>
@@ -13730,7 +13768,7 @@ function renderScenePanel(){
     const ok = meetsReq(c.requires);
     if(ok) algumaAberta = true;
     const viaItem = ok ? itensQueAbriram(c.requires) : "";
-    html += `<button class="choice-btn" ${ok?'':'disabled'} onclick="sceneChoice(${i})">${c.label}${viaItem?` <span class="choice-item">${viaItem}</span>`:''}${ok?'':' <span class="choice-tag">'+motivoRequisito(c.requires)+'</span>'}</button>`;
+    html += `<button class="choice-btn${c.corrupta?' corrupta':''}" ${ok?'':'disabled'} onclick="sceneChoice(${i})">${c.label}${viaItem?` <span class="choice-item">${viaItem}</span>`:''}${ok?'':' <span class="choice-tag">'+motivoRequisito(c.requires)+'</span>'}</button>`;
   });
   /* Saída de emergência: cena em que toda escolha está travada deixaria o
      jogador olhando para botões cinzas sem nenhuma forma de sair. A cena não
