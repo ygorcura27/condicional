@@ -904,6 +904,26 @@ body.mj-aberto{overflow:hidden}
 .evd-fala{margin:14px 6px 0;font-style:italic;color:#4a3a28;line-height:1.45}
 .evd-fala span{display:block;font-style:normal;font-size:.8rem;color:#8a7a5a;margin-top:3px}
 .evd-pag .evd-valor{font-family:var(--titulo);font-size:2.4rem;font-weight:700;color:#3d6b3d;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+
+/* serviços sujos */
+.sv-lista{display:grid;gap:10px}
+.sv-card{padding:12px 14px;border-radius:6px;background:rgba(0,0,0,.28);border:1px solid rgba(190,74,51,.3);border-left:3px solid #be4a33}
+.sv-card.feito{opacity:.55}
+.sv-topo{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.sv-topo b{font-weight:600;color:#f6ecd4;line-height:1.3}
+.sv-paga{font-family:var(--titulo);font-size:1.25rem;font-weight:700;color:#9fe0b0;white-space:nowrap}
+.sv-linha{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0;font-size:.82rem;color:#d6c9a8}
+.sv-chance{display:inline-flex;align-items:center;gap:7px}
+.sv-chance i{width:70px;height:5px;border-radius:3px;background:linear-gradient(90deg,#c98b3a var(--ch),rgba(255,255,255,.1) var(--ch))}
+.sv-efe{display:flex;flex-direction:column;gap:2px;font-size:.78rem}
+.sv-efe .ok{color:#e0c28a} .sv-efe .ruim{color:#f0a090}
+.sv-acao{display:flex;justify-content:flex-end;margin-top:8px}
+.it-btn.sujo{background:linear-gradient(180deg,#c9583f,#9c3b22);border-color:#d8705a;color:#fff6ec}
+.sv-nota{font-size:.82rem;color:#9a8f78;margin:0 0 10px}
+.sv-nota b{color:#f0b04a}
+.it-aviso i{opacity:.8}
+.sidebtn.loja-btn.sujo{color:#8a2c1a;background:rgba(190,74,51,.08);border-color:rgba(156,59,34,.5)}
+.sidebtn.loja-btn.sujo:hover{background:rgba(190,74,51,.16);color:#6a1e10;border-color:#9c3b22}
 </style>
 </head>
 <body>
@@ -8466,11 +8486,12 @@ function desenharMochila(){
   const todas=S.evidence||[], doCaso=todas.filter(evidenceScopeForSeason(S.season));
   if(mochilaSel && S.provasMeta && S.provasMeta[mochilaSel]) S.provasMeta[mochilaSel].nova=false;
   const nItens=Object.values(S.itens||{}).reduce((a,b)=>a+b,0);
-  const abas=[['caso','Provas do caso',doCaso.length],['arquivo','Arquivo',todas.length],['itens','Itens',nItens],['loja','Loja',''],['pertences','Pertences','']];
+  const abas=[['caso','Provas do caso',doCaso.length],['arquivo','Arquivo',todas.length],['itens','Itens',nItens],['loja','Loja',''],['servicos','Serviços sujos',''],['pertences','Pertences','']];
   let corpo='';
   if(mochilaAba==='pertences') corpo=pertencesHtml();
   else if(mochilaAba==='itens') corpo=itensHtml();
   else if(mochilaAba==='loja') corpo=lojaHtml();
+  else if(mochilaAba==='servicos') corpo=servicosHtml();
   else {
     const base = mochilaAba==='caso'?doCaso:todas;
     const tipos=Object.keys(TIPOS_PROVA).filter(t=>base.some(id=>tipoProva(id)===t));
@@ -8652,6 +8673,108 @@ function entregarRecompensa(conq){
   else S.itens[r.item]=(S.itens[r.item]||0)+(r.qtd||1);
   evidencePopupQueue.push('item:'+r.item+':'+(r.qtd||1)+':'+encodeURIComponent(r.de+'|'+r.fala+'|'+extra));
 }
+
+/* ---------- serviços sujos: o Nelson tem trabalho por fora ----------
+   Pagam muito mais que o honorário, mas cada um testa uma perícia, sobe o Calor
+   e suja a Integridade. Falhou: o Calor dispara e a Confiança cai. Dois por caso;
+   a revogação, se o Calor estourar, chega no próximo período. */
+const SERVICOS={
+  laudoFalso:     {t:'Assinar um laudo de autenticidade para uma tela duvidosa', per:'falsificacao', dif:6, paga:6000,
+                   ok:{calor:8, integridade:-10}, falha:{calor:20, confianca:-10},
+                   txtOk:'O comprador emoldura o laudo junto com a tela. Seu nome agora está pendurado numa sala de estar em Higienópolis.',
+                   txtFalha:'O perito do seguro pede uma segunda opinião. A sua assinatura vira assunto numa reunião em que você não estava.'},
+  vazarBatida:    {t:'Vender ao submundo a data de uma batida da PF', per:'labia', dif:6, paga:9000,
+                   ok:{calor:6, integridade:-15, submundo:8, confianca:-4}, falha:{calor:20, confianca:-20},
+                   txtOk:'Quando a PF chega, o galpão está vazio e varrido. Ninguém suspeita de você — ainda.',
+                   txtFalha:'O comprador era informante. A data da batida volta para a mesa da PF com o seu apelido escrito ao lado.'},
+  copiaEstudo:    {t:'Pintar uma “cópia de estudo” que vai ser revendida como original', per:'falsificacao', dif:7, paga:12000,
+                   ok:{calor:10, integridade:-12}, falha:{calor:15},
+                   txtOk:'Três semanas depois, a cópia aparece num catálogo de leilão em Lisboa, sem a palavra “cópia”.',
+                   txtFalha:'O craquelê sai artificial demais. O colecionador devolve a tela e espalha que você perdeu a mão.'},
+  desvioDeposito: {t:'Desviar uma peça pequena do depósito de apreensões', per:'infiltracao', dif:6, paga:15000,
+                   ok:{calor:15, integridade:-20}, falha:{calor:30, confianca:-15},
+                   txtOk:'A peça sai embrulhada em jornal dentro de uma caixa de arquivo morto. O inventário fecha com uma a menos.',
+                   txtFalha:'A câmera do corredor que todo mundo jurava quebrada estava gravando.'},
+  pedagio:        {t:'Cobrar “pedágio” de um falsário iniciante para não entregá-lo', per:'labia', dif:5, paga:4000,
+                   ok:{calor:4, integridade:-8, metodo:-6}, falha:{calor:12},
+                   txtOk:'O garoto paga em dinheiro vivo, com as mãos tremendo. Você lembra de quando era você.',
+                   txtFalha:'O garoto não paga e conta para todo mundo que o consultor da PF anda cobrando.'},
+  laranjaLeilao:  {t:'Servir de comprador laranja num leilão de lavagem', per:'rede', dif:5, paga:10000,
+                   ok:{calor:12, integridade:-15}, falha:{calor:25},
+                   txtOk:'Você arremata, assina, devolve a tela no estacionamento e recebe a comissão num envelope pardo.',
+                   txtFalha:'O leiloeiro reconhece você da última apreensão. A sala inteira vê.'},
+  procedencia:    {t:'Fabricar um certificado de procedência para uma peça sem histórico', per:'falsificacao', dif:5, paga:5000,
+                   ok:{calor:6, integridade:-8}, falha:{calor:14},
+                   txtOk:'Papel de época, carimbo de um cartório que fechou em 1974, assinatura de um tabelião morto.',
+                   txtFalha:'O papel tem branqueador óptico. Qualquer lanterna UV acende o seu trabalho.'},
+  pistaFalsa:     {t:'Plantar na PF uma pista falsa encomendada por um receptador', per:'labia', dif:7, paga:11000,
+                   ok:{confianca:-6, integridade:-15, submundo:6}, falha:{confianca:-25, calor:10},
+                   txtOk:'A equipe passa dois dias atrás de um depósito vazio em Duque de Caxias. O receptador muda tudo de lugar nesse tempo.',
+                   txtFalha:'A pista não fecha com o resto do inquérito, e a chefe percebe de onde ela veio.'},
+  chaveCofre:     {t:'Copiar a chave do cofre de um antiquário', per:'infiltracao', dif:7, paga:13000,
+                   ok:{calor:12, integridade:-12, metodo:-8}, falha:{calor:30},
+                   txtOk:'Um molde em sabão, dois minutos de distração, e o cofre deixa de ser segredo.',
+                   txtFalha:'O antiquário guarda a chave no pescoço e dorme de olho aberto. A polícia militar aparece antes de você sair.'},
+  apagarRegistro: {t:'Apagar o registro de entrada de uma peça no arquivo', per:'infiltracao', dif:5, paga:7000,
+                   ok:{calor:8, integridade:-10}, falha:{calor:18, confianca:-8},
+                   txtOk:'A folha some do livro de tombo. Para o Estado, aquela peça nunca entrou.',
+                   txtFalha:'O livro tem numeração de páginas, e a página que falta grita mais que qualquer registro.'},
+  restauroOculto: {t:'Fazer um “restauro” que esconde a repintura de um vendedor', per:'falsificacao', dif:6, paga:8000,
+                   ok:{calor:6, integridade:-10}, falha:{calor:12},
+                   txtOk:'Verniz grosso e pátina por cima. A repintura de 1990 vira “estado original”.',
+                   txtFalha:'O comprador manda fazer raio X antes de pagar. Ninguém paga você.'},
+  acervoInflado:  {t:'Inflar a avaliação de um acervo para garantir um empréstimo', per:'rede', dif:6, paga:14000,
+                   ok:{calor:10, integridade:-15}, falha:{calor:22, confianca:-10},
+                   txtOk:'O banco aceita a sua avaliação sem ler a segunda página. O empréstimo sai em quatro dias.',
+                   txtFalha:'O banco contrata outro avaliador, que encontra o seu nome e os números que não fecham.'}
+};
+const SERVICOS_POR_CASO=2;
+function servicosDoCaso(){
+  const ids=Object.keys(SERVICOS), n=ids.length, base=((S.season||1)*7+(S.caso||1)*3)%n;
+  return [ids[base], ids[(base+5)%n], ids[(base+9)%n]];
+}
+function chaveCaso(){ return (S.season||1)+'-'+(S.caso||1); }
+function feitosNoCaso(){ S.servicosFeitos=S.servicosFeitos||{}; return S.servicosFeitos[chaveCaso()]||[]; }
+function pagaServico(sv){ return Math.round(sv.paga*(1+0.15*((S.season||1)-1))/100)*100; }
+function chanceServico(sv){ return Math.max(0.08, Math.min(0.94, 0.5 + (pericia(sv.per)-sv.dif)*0.09)); }
+function efeitosTxt(e){ const nomes={calor:'Calor',confianca:'Confiança',submundo:'Submundo',integridade:'Integridade',metodo:'Método'};
+  return Object.entries(e).map(([k,v])=>`${nomes[k]} ${v>0?'+':'−'}${Math.abs(v)}`).join(' · '); }
+function aplicarEfeitosServico(e){
+  for(const k in e){ const v=e[k];
+    if(k==='integridade') S.integridade=clampSigned((S.integridade||0)+v);
+    else if(k==='metodo') S.metodo=clampSigned((S.metodo||0)+v);
+    else S.meters[k]=clamp((S.meters[k]||0)+v); }
+}
+window.aceitarServico = function(id){
+  const sv=SERVICOS[id]; if(!sv) return;
+  if(!naLoja()){ const l=lojaLoc(); mochilaAviso=l?'O Nelson só fala de trabalho '+l.onde+'.':'Ninguém oferece trabalho neste capítulo.'; desenharMochila(); return; }
+  const feitos=feitosNoCaso(); if(feitos.includes(id) || feitos.length>=SERVICOS_POR_CASO) return;
+  S.servicosFeitos[chaveCaso()]=feitos.concat(id);
+  const ok=skillCheck(pericia(sv.per), sv.dif), v=pagaServico(sv);
+  if(ok){ S.money+=v; aplicarEfeitosServico(sv.ok); S.servicosSujos=(S.servicosSujos||0)+1;
+    mochilaAviso=`<b>Feito. +R$ ${v.toLocaleString('pt-BR')}.</b> ${sv.txtOk} <i>(${efeitosTxt(sv.ok)})</i>`; som.efeito('moeda'); }
+  else { aplicarEfeitosServico(sv.falha);
+    mochilaAviso=`<b>Deu errado.</b> ${sv.txtFalha} <i>(${efeitosTxt(sv.falha)})</i>`; som.efeito(S.meters.calor>=85?'alarme':'erro'); }
+  save(); atualizarHud(); desenharMochila();
+};
+function servicosHtml(){
+  const l=lojaLoc(), aqui=naLoja(), feitos=feitosNoCaso(), restam=Math.max(0,SERVICOS_POR_CASO-feitos.length);
+  const faixa = !l ? `<p class="it-aviso">Neste capítulo o Nelson não tem onde atender.</p>`
+    : aqui ? `<p class="it-aqui">O Nelson baixa a voz. ${restam ? `“Tenho ${restam===1?'mais um':'dois'} pra você neste caso. Mais que isso chama atenção.”` : '“Por este caso, chega. Volte quando a poeira baixar.”'}</p>`
+    : `<div class="it-longe"><span>Trabalho assim só se combina pessoalmente, <b>${l.onde}</b>.</span>${mode==='map'||mode==='scene'?`<button type="button" class="it-btn" onclick="irParaLoja()">Ir até ${l.nome}</button>`:''}</div>`;
+  const cards=servicosDoCaso().map(id=>{ const sv=SERVICOS[id], feito=feitos.includes(id), ch=Math.round(chanceServico(sv)*100);
+    const pode=aqui && !feito && restam>0;
+    return `<div class="sv-card${feito?' feito':''}">
+      <div class="sv-topo"><b>${sv.t}</b><span class="sv-paga">R$ ${pagaServico(sv).toLocaleString('pt-BR')}</span></div>
+      <div class="sv-linha"><span class="sv-teste">${NOME_PERICIA[sv.per]} ${pericia(sv.per)} contra ${sv.dif}</span><span class="sv-chance" style="--ch:${ch}%"><i></i>${ch}% de dar certo</span></div>
+      <div class="sv-efe"><span class="ok">Se der certo: ${efeitosTxt(sv.ok)}</span><span class="ruim">Se falhar: ${efeitosTxt(sv.falha)}, sem pagamento</span></div>
+      <div class="sv-acao">${feito?'<span class="it-ativo">Já feito</span>':`<button type="button" class="it-btn sujo" ${pode?'':'disabled'} onclick="aceitarServico('${id}')">Aceitar o serviço</button>`}</div>
+    </div>`; }).join('');
+  return `${faixa}${mochilaAviso?`<p class="it-aviso" role="status">${mochilaAviso}</p>`:''}
+   <p class="sv-nota">Calor agora: <b>${S.meters.calor}</b>. Se passar de 100, a condicional cai no próximo período.</p>
+   <div class="sv-lista">${cards}</div>`;
+}
+
 function itemPopupHtml(entrada){
   const [,id,qtd,txt]=entrada.split(':'), it=ITENS[id]; if(!it) return '';
   const [de,fala,extra]=decodeURIComponent(txt||'').split('|');
@@ -13460,7 +13583,7 @@ function enterLocation(locId){
   mode="scene"; render();
 }
 
-function botaoLoja(loc){ const l=lojaLoc(); return l&&l.id===loc ? `<button type="button" class="sidebtn loja-btn" onclick="abrirMochila(null,'loja')">${ICONE_MOCHILA} Ver a mala do Nelson — ferramentas e favores</button>` : ''; }
+function botaoLoja(loc){ const l=lojaLoc(); return l&&l.id===loc ? `<button type="button" class="sidebtn loja-btn" onclick="abrirMochila(null,'loja')">${ICONE_MOCHILA} Ver a mala do Nelson — ferramentas e favores</button><button type="button" class="sidebtn loja-btn sujo" onclick="abrirMochila(null,'servicos')">${ICONE_MOCHILA} Ouvir as propostas do Nelson — serviços sujos</button>` : ''; }
 function renderScenePanel(){
   const cs = currentScene;
   if(cs.filler){
